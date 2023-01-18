@@ -32,18 +32,17 @@ def get_chat_list() -> set[int]:
     updates = d['result']
     result = set()
     for update in updates:
-        update_body = None
         for key in ('message',
                     'edited_message',
+                    'channel_post',
+                    'edited_channel_post'
                     'chat_member', 
                     'my_chat_member',
                     'chat_join_request',
-                    'channel_post',
-                    'edited_channel_post'
                     ):
-            if not update_body:
-                update_body = update.get(key)
-        result.add(int(update_body['chat']['id']))
+            if key in update:
+                result.add(int(update[key]['chat']['id']))
+                break    
     
     if is_in_debug_mode():
         result = {-1001899507998}  # test group for bots

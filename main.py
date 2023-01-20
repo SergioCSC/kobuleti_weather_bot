@@ -1,8 +1,18 @@
 import base
+import tg_api_connector
 
 import json
 import urllib
-import tg_api_connector
+from typing import NamedTuple
+
+class Weather(NamedTuple):
+    city_name: str
+    temp_celsius: float
+    pressure_mm_hg: int
+    humidity_percent: int
+    wind_speed_ms: float
+    short_description: str
+    long_description: str
 
 
 def get_chat_set(event: dict) -> set[int]:
@@ -34,30 +44,57 @@ def get_chat_set(event: dict) -> set[int]:
         assert False
 
 
-def lambda_handler(event: dict, context) -> dict:
-    
+def http_get_weather() -> Weather:
     WEATHER_SITE = 'https://api.openweathermap.org/data/2.5/weather?lat=41.8141&lon=41.7739&units=metric&lang=ru&appid=11c0d3dc6093f7442898ee49d2430d20'
     message = tg_api_connector.get(WEATHER_SITE)
     d = json.load(message)
-    celsius = float(d['main']['temp'])  # - 273.15
+    temp_celsius = float(d['main']['temp'])  # - 273.15
     pressure_mm_hg = int(float(d['main']['pressure']) * 3 / 4)
-    humidity = int(d['main']['humidity'])
-    wind_speed = float(d['wind']['speed'])
-    weather_main = d['weather'][0]['main']
-    weather_description = d['weather'][0]['description']
+    humidity_percent: int = int(d['main']['humidity'])
+    wind_speed_ms = float(d['wind']['speed'])
+    short_description = d['weather'][0]['main']
+    long_description = d['weather'][0]['description']
+    
     # weather_icon = d['weather'][0]['icon']
     
-    weather_icon = ''
-    if weather_main == 'Clear':
-        weather_icon = '🌞'
+    return Weather('Кобулети', 
+                   temp_celsius, 
+                   pressure_mm_hg, 
+                   humidity_percent, 
+                   wind_speed_ms, 
+                   short_description, 
+                   long_description
+                  )
     
+    
+def create_weather_message(w: Weather) -> str:
+    weather_icon = ''
+    if w.short_description == 'Clear':
+        weather_icon = '🌞 '
+    elif w.short_description == 'Clouds':
+        weather_icon = '☁ '
+    elif w.short_description == 'Rain':
+        weather_icon = '💧 '
+    elif w.short_description == 'Snow':
+        weather_icon = '❄ '
+    else: 
+        weather_icon = w.short_description
+
     message = (
-        f'❣️ Кобулети\n'
-        f'🌡 {celsius:.0f} °C, {weather_icon} {weather_description}\n'
-        f'ветер 💨 {wind_speed:.0f} м/с\n'
-        f'влажность 🚰 {humidity}%\n'
-        f'давление 🎈 {pressure_mm_hg} мм рт. ст.'
+        f'🏖 {w.city_name}\n'
+        f'🌡 {w.temp_celsius:.0f} °C, {weather_icon}{w.long_description}\n'
+        f'💨 ветер {w.wind_speed_ms:.0f} м/с\n'
+        f'🚰 влажность {w.humidity_percent}%\n'
+        f'🎈 давление {w.pressure_mm_hg} мм рт. ст.'
     )
+    
+    return message
+
+
+def lambda_handler(event: dict, context) -> dict:
+    
+    weather = http_get_weather()
+    message = create_weather_message(weather)
     message = urllib.parse.quote(message.encode('utf-8'))
     
     chat_set = get_chat_set(event)

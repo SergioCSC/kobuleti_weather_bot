@@ -1,18 +1,9 @@
 import base
+import weather_connector
 import tg_api_connector
 
 import json
 import urllib
-from typing import NamedTuple
-
-class Weather(NamedTuple):
-    city_name: str
-    temp_celsius: float
-    pressure_mm_hg: int
-    humidity_percent: int
-    wind_speed_ms: float
-    short_description: str
-    long_description: str
 
 
 def get_chat_set(event: dict) -> set[int]:
@@ -42,32 +33,9 @@ def get_chat_set(event: dict) -> set[int]:
         assert False
     else:
         assert False
-
-
-def http_get_weather() -> Weather:
-    WEATHER_SITE = 'https://api.openweathermap.org/data/2.5/weather?lat=41.8141&lon=41.7739&units=metric&lang=ru&appid=11c0d3dc6093f7442898ee49d2430d20'
-    message = tg_api_connector.get(WEATHER_SITE)
-    d = json.load(message)
-    temp_celsius = float(d['main']['temp'])  # - 273.15
-    pressure_mm_hg = int(float(d['main']['pressure']) * 3 / 4)
-    humidity_percent: int = int(d['main']['humidity'])
-    wind_speed_ms = float(d['wind']['speed'])
-    short_description = d['weather'][0]['main']
-    long_description = d['weather'][0]['description']
-    
-    # weather_icon = d['weather'][0]['icon']
-    
-    return Weather('Кобулети', 
-                   temp_celsius, 
-                   pressure_mm_hg, 
-                   humidity_percent, 
-                   wind_speed_ms, 
-                   short_description, 
-                   long_description
-                  )
     
     
-def create_weather_message(w: Weather) -> str:
+def create_weather_message(w: weather_connector.Weather) -> str:
     weather_icon = ''
     if w.short_description == 'Clear':
         weather_icon = '🌞 '
@@ -93,7 +61,7 @@ def create_weather_message(w: Weather) -> str:
 
 def lambda_handler(event: dict, context) -> dict:
     
-    weather = http_get_weather()
+    weather = weather_connector.http_get_weather()
     message = create_weather_message(weather)
     message = urllib.parse.quote(message.encode('utf-8'))
     

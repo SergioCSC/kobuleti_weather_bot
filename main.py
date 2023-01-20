@@ -49,11 +49,11 @@ def create_weather_message(w: weather_connector.Weather) -> str:
         weather_icon = w.short_description
 
     message = (
-        f'🏖 {w.city_name}\n'
+        f'🏖 *{w.city_name}*\n'
         f'🌡 {w.temp_celsius:.0f} °C, {weather_icon}{w.long_description}\n'
         f'💨 ветер {w.wind_speed_ms:.0f} м/с\n'
         f'🚰 влажность {w.humidity_percent}%\n'
-        f'🎈 давление {w.pressure_mm_hg} мм рт. ст.'
+        f'🎈 давление {w.pressure_mm_hg} мм рт\. ст\.'
     )
     
     return message

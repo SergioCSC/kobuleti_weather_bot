@@ -15,8 +15,13 @@ def send_message(chat_set: set[int], message: str) -> None:
 
     for chat_id in chat_set:
         TELEGRAM_SITE = (
-            f'{cfg.TELEGRAM_URL_PREFIX}{api_keys.TELEGRAM_BOT_TOKEN}/sendMessage?'
-            f'disable_notification=true&chat_id={chat_id}&text={message}'
+            f'{cfg.TELEGRAM_URL_PREFIX}'
+            f'{api_keys.TELEGRAM_BOT_TOKEN}'
+            f'/sendMessage'
+            f'?disable_notification=true'
+            f'&parse_mode=MarkdownV2'
+            f'&chat_id={chat_id}'
+            f'&text={message}'
         )
         print(TELEGRAM_SITE)
         try:

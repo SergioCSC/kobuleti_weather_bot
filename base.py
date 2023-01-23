@@ -1,55 +1,71 @@
-# import boto3
-# from botocore.exceptions import ResourceNotFoundException
+import config as cfg
 
-# TABLE_NAME = 'weather-bot-chats'
-# dynamodb = boto3.resource('dynamodb')
+import boto3
+import botocore
+from botocore.exceptions import ClientError
 
-
-# def create_table(table_name: str) -> None:
-#     try:
-#         table = dynamodb.create_table(
-#             TableName=table_name,
-#             KeySchema=[
-#                 {
-#                     'Attribute_name': 'id',
-#                     'key_type': 'HASH'
-#                 },
-#             ],
-#             AttributeDefinitions=[
-#                 {
-#                     'attribute_name': 'id',
-#                     'attribute_type': 'N'
-#                 },
-#             ]
-#             # ProvisionedThroughput={
-#             #     'ReadCapacityUnits': 5,
-#             #     'WriteCapacityUnits': 5
-#             # }
-#         )
-#         print("Table created successfully!")
-#     except ResourceNotFoundException:
-#         print("Resource not found.")
+TABLE_NAME = 'weather-bot-chats'
+TABLE = None
 
 
-# create_table(TABLE_NAME)
-# table = dynamodb.Table(TABLE_NAME)
+def init_table() -> 'boto3.resources.factory.dynamodb.Table':
+    dynamodb_client = boto3.client('dynamodb', region_name=cfg.AWS_REGION)
+    dynamodb_resource = boto3.resource('dynamodb', region_name=cfg.AWS_REGION)
+    table = create_table(dynamodb_client, dynamodb_resource, TABLE_NAME)
+
+    print(f'{dynamodb_client = }, {type(dynamodb_client) = }')
+    print(f'{dynamodb_resource = }, {type(dynamodb_resource) = }')
+    print(f'{table = }, {type(table) = }')
+    
+    return table
+
+
+def create_table(dynamodb_client: 'botocore.client.DynamoDB',
+                 dynamodb_resource: 'boto3.resources.factory.dynamodb.ServiceResource',
+                 table_name: str):
+    try:
+        table = dynamodb_resource.create_table(
+            TableName=table_name,
+            KeySchema=[
+                {
+                    'AttributeName': 'id',
+                    'KeyType': 'HASH'
+                },
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': 'id',
+                    'AttributeType': 'N'
+                },
+            ],
+            BillingMode='PROVISIONED',
+            ProvisionedThroughput={
+                'ReadCapacityUnits': 1,
+                'WriteCapacityUnits': 1
+            }
+        )
+        table.wait_until_exists()
+        print('Table created successfully!')
+    except dynamodb_client.exceptions.ResourceInUseException:
+        print(f'ResourceInUseException. Probably, db {table_name} already exists.')
+        table = dynamodb_resource.Table(table_name)
+    return table
 
 
 def get_chat_set() -> set[int]:
-    return {534111842, 253766343, -1001899507998, -1001889227859}
-    # return {-1001899507998}
-    create_table(TABLE_NAME)
-    response = table.scan()
+    # return {534111842, 253766343, -1001899507998, -1001889227859}
+    response = TABLE.scan()
     items = response['Items']
     return set(item['id'] for item in items)
 
 
 def add_chat(chat_id: int) -> None:
-    return
-    create_table(TABLE_NAME)
+    TABLE.load()
     item = {
         'id': chat_id,
     }
-    table.put_item(Item=item)
-
+    TABLE.put_item(Item=item)
+    print(f'Item {chat_id} putted into the table')
     
+
+TABLE = init_table()

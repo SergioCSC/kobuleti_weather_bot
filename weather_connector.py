@@ -2,8 +2,12 @@ import config as cfg
 import api_keys
 import utils
 
+from PIL import Image
+
+import io
 from typing import NamedTuple
 import json
+from urllib.request import urlopen
 
 
 class Weather(NamedTuple):
@@ -14,6 +18,42 @@ class Weather(NamedTuple):
     wind_speed_ms: float
     short_description: str
     long_description: str
+    
+    
+    
+def create_weather_message(w: Weather) -> str:
+    weather_icon = ''
+    if w.short_description == 'Clear':
+        weather_icon = '🌞 '
+    elif w.short_description == 'Clouds':
+        weather_icon = '☁ '
+    elif w.short_description == 'Rain':
+        weather_icon = '💧 '
+    elif w.short_description == 'Snow':
+        weather_icon = '❄ '
+    else: 
+        weather_icon = w.short_description
+
+    message = (
+        f'🏖 *{w.city_name}*\n'
+        f'🌡 {w.temp_celsius:.0f} °C, {weather_icon}{w.long_description}\n'
+        f'💨 ветер {w.wind_speed_ms:.0f} м/с\n'
+        f'🚰 влажность {w.humidity_percent}%\n'
+        f'🎈 давление {w.pressure_mm_hg} мм рт\. ст\.'
+    )
+    
+    return message
+  
+
+def get_weather_image() -> io.BytesIO:
+    img = Image.open(urlopen(cfg.WEATHER_IMAGE_URL))
+    area = (0, 0, 2230, 550)
+    cropped_img = img.crop(area)
+    
+    bytes_object = io.BytesIO()
+    cropped_img.save(bytes_object, format='png')
+    bytes_object.seek(0)
+    return bytes_object
 
 
 def http_get_weather() -> Weather:

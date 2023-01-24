@@ -54,6 +54,9 @@ def create_table(dynamodb_client: 'botocore.client.DynamoDB',
 
 def get_chat_set() -> set[int]:
     # return {534111842, 253766343, -1001899507998, -1001889227859}
+    #         me       , Leha     ,test_group_bots,      monastery}
+    if not cfg.IN_AWS_LAMBDA:
+        return {534111842, -1001899507998}
     response = TABLE.scan()
     items = response['Items']
     return set(item['id'] for item in items)

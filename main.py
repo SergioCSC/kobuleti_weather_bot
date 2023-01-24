@@ -2,6 +2,7 @@ import base
 import weather_connector
 import tg_api_connector
 
+import io
 import json
 import urllib
 
@@ -33,43 +34,27 @@ def get_chat_set(event: dict) -> set[int]:
         assert False
     else:
         assert False
-    
-    
-def create_weather_message(w: weather_connector.Weather) -> str:
-    weather_icon = ''
-    if w.short_description == 'Clear':
-        weather_icon = '🌞 '
-    elif w.short_description == 'Clouds':
-        weather_icon = '☁ '
-    elif w.short_description == 'Rain':
-        weather_icon = '💧 '
-    elif w.short_description == 'Snow':
-        weather_icon = '❄ '
-    else: 
-        weather_icon = w.short_description
 
-    message = (
-        f'🏖 *{w.city_name}*\n'
-        f'🌡 {w.temp_celsius:.0f} °C, {weather_icon}{w.long_description}\n'
-        f'💨 ветер {w.wind_speed_ms:.0f} м/с\n'
-        f'🚰 влажность {w.humidity_percent}%\n'
-        f'🎈 давление {w.pressure_mm_hg} мм рт\. ст\.'
-    )
-    
-    return message
+        
+# def delete_file(filename: str) -> None:
+#     try:
+#         if os.path.isfile(filename) or os.path.islink(filename):
+#             os.unlink(filename)
+#     except Exception as e:
+#         print('Failed to delete %s. Reason: %s' % (filename, e))
 
 
 def lambda_handler(event: dict, context) -> dict:
     
     weather = weather_connector.http_get_weather()
-    message = create_weather_message(weather)
+    message = weather_connector.create_weather_message(weather)
     message = urllib.parse.quote(message.encode('utf-8'))
     
-    chat_set = get_chat_set(event)
-    tg_api_connector.send_message(chat_set, message)
-    
-    return {'statusCode': 200, 'body': 'Success'}
 
+    chat_set = get_chat_set(event)
+    image: io.BytesIO = weather_connector.get_weather_image()
+    tg_api_connector.send_message(chat_set, message, image)
+    return {'statusCode': 200, 'body': 'Success'}
 
 
 def test_event_bridge_run():

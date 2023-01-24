@@ -4,7 +4,7 @@ import tg_api_connector
 
 import io
 import json
-import urllib
+import tests
 
 
 def get_chat_set(event: dict) -> set[int]:
@@ -35,21 +35,11 @@ def get_chat_set(event: dict) -> set[int]:
     else:
         assert False
 
-        
-# def delete_file(filename: str) -> None:
-#     try:
-#         if os.path.isfile(filename) or os.path.islink(filename):
-#             os.unlink(filename)
-#     except Exception as e:
-#         print('Failed to delete %s. Reason: %s' % (filename, e))
-
 
 def lambda_handler(event: dict, context) -> dict:
     
     weather = weather_connector.http_get_weather()
     message = weather_connector.create_weather_message(weather)
-    message = urllib.parse.quote(message.encode('utf-8'))
-    
 
     chat_set = get_chat_set(event)
     image: io.BytesIO = weather_connector.get_weather_image()
@@ -57,89 +47,7 @@ def lambda_handler(event: dict, context) -> dict:
     return {'statusCode': 200, 'body': 'Success'}
 
 
-def test_event_bridge_run():
-    test_event = {
-        "id": "cdc73f9d-aea9-11e3-9d5a-835b769c0d9c",
-        "detail-type": "Scheduled Event",
-        "source": "aws.events",
-        "account": "123456789012",
-        "time": "1970-01-01T00:00:00Z",
-        "region": "us-east-1",
-        "resources": ["arn:aws:events:us-east-1:123456789012:rule/ExampleRule"],
-        "detail": {},
-    }
-
-    lambda_handler(test_event, None)
-
-
-def http_request_from_tg_test_run():
-    test_event = {
-        "version": "1.0",
-        "resource": "/kobuleti_weather",
-        "path": "/default/kobuleti_weather",
-        "httpMethod": "POST",
-        "headers": {
-            "Content-Length": "323",
-            "Content-Type": "application/json",
-            "Host": "1ykm8geil9.execute-api.us-east-1.amazonaws.com",
-            "X-Amzn-Trace-Id": "Root=1-63c84418-1cdec56523ada7094cd8702d",
-            "X-Forwarded-For": "91.108.6.97",
-            "X-Forwarded-Port": "443",
-            "X-Forwarded-Proto": "https",
-            "accept-encoding": "gzip, deflate",
-        },
-        "multiValueHeaders": {
-            "Content-Length": ["323"],
-            "Content-Type": ["application/json"],
-            "Host": ["1ykm8geil9.execute-api.us-east-1.amazonaws.com"],
-            "X-Amzn-Trace-Id": ["Root=1-63c84418-1cdec56523ada7094cd8702d"],
-            "X-Forwarded-For": ["91.108.6.97"],
-            "X-Forwarded-Port": ["443"],
-            "X-Forwarded-Proto": ["https"],
-            "accept-encoding": ["gzip, deflate"],
-        },
-        "queryStringParameters": None,
-        "multiValueQueryStringParameters": None,
-        "requestContext": {
-            "accountId": "145384694416",
-            "apiId": "1ykm8geil9",
-            "domainName": "1ykm8geil9.execute-api.us-east-1.amazonaws.com",
-            "domainPrefix": "1ykm8geil9",
-            "extendedRequestId": "e8-T6jzPIAMEVrw=",
-            "httpMethod": "POST",
-            "identity": {
-                "accessKey": None,
-                "accountId": None,
-                "caller": None,
-                "cognitoAmr": None,
-                "cognitoAuthenticationProvider": None,
-                "cognitoAuthenticationType": None,
-                "cognitoIdentityId": None,
-                "cognitoIdentityPoolId": None,
-                "principalOrgId": None,
-                "sourceIp": "91.108.6.97",
-                "user": None,
-                "userAgent": "",
-                "userArn": None,
-            },
-            "path": "/default/kobuleti_weather",
-            "protocol": "HTTP/1.1",
-            "requestId": "e8-T6jzPIAMEVrw=",
-            "requestTime": "18/Jan/2023:19:10:16 +0000",
-            "requestTimeEpoch": 1674069016865,
-            "resourceId": "ANY /kobuleti_weather",
-            "resourcePath": "/kobuleti_weather",
-            "stage": "default",
-        },
-        "pathParameters": None,
-        "stageVariables": None,
-        "body": '{"update_id":124257435,\n"message":{"message_id":439,"from":{"id":534111842,"is_bot":false,"first_name":"Sergio","username":"n_log_n","language_code":"en"},"chat":{"id":-1001899507998,"title":"Test Group for bots","type":"supergroup"},"date":1674068886,"text":"/s","entities":[{"offset":0,"length":2,"type":"bot_command"}]}}',
-        "isBase64Encoded": False,
-    }
-
-    lambda_handler(test_event, None)
-
-
 if __name__ == '__main__':
-    test_event_bridge_run()
-    http_request_from_tg_test_run()
+    for k, v in tests.__dict__.items():
+        if k.startswith('test_') and isinstance(v, dict):
+            lambda_handler(v, None)

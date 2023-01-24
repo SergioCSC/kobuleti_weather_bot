@@ -4,6 +4,7 @@ import api_keys
 import requests
 import io
 import sys
+import urllib
 from urllib.error import HTTPError
 
 
@@ -13,9 +14,8 @@ def is_in_debug_mode():
 
 
 def send_message(chat_set: set[int], message: str, image: io.BytesIO) -> None:
-    # photo_url = 'https://my.meteoblue.com/visimage/meteogram_web_hd?look=KILOMETER_PER_HOUR%2CCELSIUS%2CMILLIMETER%2Cdarkmode&apikey=5838a18e295d&temperature=C&windspeed=kmh&precipitationamount=mm&winddirection=3char&city=K%27obulet%27i&iso2=ge&lat=41.8214&lon=41.7792&asl=3&tz=Asia%2FTbilisi&lang=en&sig=a4868efb7f837c79aa59b5b95505a0b1'
-    # photo_url = 'https://www.fnordware.com/superpng/pnggrad16rgb.png'
-
+    message = urllib.parse.quote(message.encode('utf-8'))
+    
     for chat_id in chat_set:
         TELEGRAM_SITE = (
             f'{cfg.TELEGRAM_URL_PREFIX}'

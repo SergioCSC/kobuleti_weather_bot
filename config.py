@@ -10,8 +10,10 @@ if IN_AWS_LAMBDA:
 
 AWS_REGION = environ.get('AWS_REGION', 'us-east-1')
 
-WEATHER_SITE_PREFIX = 'https://api.openweathermap.org/data/2.5/weather'
-WEATHER_SITE_FIXED_PARAMS = '&units=metric&lang=ru'
+OPENWEATHERMAP_GEOCODING_PREFIX = 'http://api.openweathermap.org/geo/1.0/direct?limit=1'
+OPENWEATHERMAP_SITE_PREFIX = 'https://api.openweathermap.org/data/2.5/weather'
+OPENWEATHERMAP_SITE_FIXED_PARAMS = '&units=metric&lang=ru'
+
 
 METEOBLUE_GEOCODING_PREFIX = 'https://www.meteoblue.com/en/server/search/query3?itemsPerPage=1&query='
 METEOBLUE_GET_CITI_INFO_PREFIX = 'https://www.meteoblue.com/en/weather/week/'

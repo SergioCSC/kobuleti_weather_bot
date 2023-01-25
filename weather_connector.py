@@ -7,6 +7,7 @@ from PIL import Image
 import io
 from typing import NamedTuple
 import json
+import urllib
 from urllib.request import urlopen
 
 
@@ -45,7 +46,8 @@ def create_weather_message(w: Weather) -> str:
     return message
 
 def get_meteoblue_params(city_name: str) -> tuple:
-    url = cfg.METEOBLUE_GEOCODING_PREFIX + city_name
+    city_name_enc = urllib.parse.quote(city_name.encode('utf-8'))
+    url = cfg.METEOBLUE_GEOCODING_PREFIX + city_name_enc
     message = utils.get(url)
     d = json.load(message)
     
@@ -101,13 +103,22 @@ def get_weather_image(city_name: str) -> io.BytesIO:
 
 
 def get_openweathermap_coordinates(city_name: str) -> str:
-    return 'lat=41.8141&lon=41.7739'  # TODO
+    city_name_enc = urllib.parse.quote(city_name.encode('utf-8'))
+    url = f'{cfg.OPENWEATHERMAP_GEOCODING_PREFIX}' \
+            f'&q={city_name_enc}' \
+            f'&appid={api_keys.OPENWEATHERMAP_ORG_APP_ID}'
+    message = utils.get(url)
+    d = json.load(message)[0]
+    city_ru_name = d.get('local_names', {}).get('ru', city_name)
+    lat = d['lat']
+    lon = d['lon']
+    return f'lat={lat}&lon={lon}'
 
 
 def http_get_weather(city_name: str) -> Weather:
     coordinates = get_openweathermap_coordinates(city_name)
-    WEATHER_SITE = f'{cfg.WEATHER_SITE_PREFIX}' \
-            f'?{cfg.WEATHER_SITE_FIXED_PARAMS}' \
+    WEATHER_SITE = f'{cfg.OPENWEATHERMAP_SITE_PREFIX}' \
+            f'?{cfg.OPENWEATHERMAP_SITE_FIXED_PARAMS}' \
             f'&{coordinates}' \
             f'&appid={api_keys.OPENWEATHERMAP_ORG_APP_ID}'
     message = utils.get(WEATHER_SITE)

@@ -37,7 +37,8 @@ def get_chat_set(event: dict) -> set[int]:
 
 
 def lambda_handler(event: dict, context) -> dict:
-    city_name: str = 'Moscow'  # TODO get_city(event)
+    city_name: str = 'Komsomolsk-on-Amur'  # TODO get_city(event)
+    city_name: str = 'Москва'  # TODO get_city(event)
     weather = weather_connector.http_get_weather(city_name)
     message = weather_connector.create_weather_message(weather)
 

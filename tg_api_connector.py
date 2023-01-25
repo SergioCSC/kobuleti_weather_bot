@@ -8,13 +8,14 @@ import urllib
 from urllib.error import HTTPError
 
 
-def is_in_debug_mode():
-    gettrace = getattr(sys, 'gettrace', None)
-    return bool(gettrace and gettrace())
+# def is_in_debug_mode():
+#     gettrace = getattr(sys, 'gettrace', None)
+#     return bool(gettrace and gettrace())
 
 
 def send_message(chat_set: set[int], message: str, image: io.BytesIO) -> None:
     message = urllib.parse.quote(message.encode('utf-8'))
+    message = message.replace('-', '\-')
     
     for chat_id in chat_set:
         TELEGRAM_SITE = (

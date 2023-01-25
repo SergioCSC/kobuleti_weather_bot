@@ -37,12 +37,12 @@ def get_chat_set(event: dict) -> set[int]:
 
 
 def lambda_handler(event: dict, context) -> dict:
-    
-    weather = weather_connector.http_get_weather()
+    city_name: str = 'Moscow'  # TODO get_city(event)
+    weather = weather_connector.http_get_weather(city_name)
     message = weather_connector.create_weather_message(weather)
 
     chat_set = get_chat_set(event)
-    image: io.BytesIO = weather_connector.get_weather_image()
+    image: io.BytesIO = weather_connector.get_weather_image(city_name)
     tg_api_connector.send_message(chat_set, message, image)
     return {'statusCode': 200, 'body': 'Success'}
 

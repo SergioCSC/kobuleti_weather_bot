@@ -1,14 +1,14 @@
 import config as cfg
 import api_keys
-import utils
+import my_exceptions
 
 from PIL import Image
 
+import re
 import io
 from typing import NamedTuple
 import json
-import urllib
-from urllib.request import urlopen
+import requests
 
 
 class Weather(NamedTuple):
@@ -33,23 +33,24 @@ def create_weather_message(w: Weather) -> str:
     elif w.short_description == 'Snow':
         weather_icon = '❄ '
     else: 
-        weather_icon = w.short_description
+        weather_icon = w.short_description + ' '
 
     message = (
         f'🏖 *{w.city_name}*\n'
         f'🌡 {w.temp_celsius:.0f} °C, {weather_icon}{w.long_description}\n'
         f'💨 ветер {w.wind_speed_ms:.0f} м/с\n'
         f'🚰 влажность {w.humidity_percent}%\n'
-        f'🎈 давление {w.pressure_mm_hg} мм рт\. ст\.'
+        f'🎈 давление {w.pressure_mm_hg} мм рт. ст.'
     )
     
     return message
 
 def get_meteoblue_params(city_name: str) -> tuple:
-    city_name_enc = urllib.parse.quote(city_name.encode('utf-8'))
-    url = cfg.METEOBLUE_GEOCODING_PREFIX + city_name_enc
-    message = utils.get(url)
-    d = json.load(message)
+    url = cfg.METEOBLUE_GEOCODING_PREFIX + city_name
+    cookies = {'locale': 'ru_RU'}
+    response = requests.get(url, cookies=cookies)
+    message = response.text
+    d = json.loads(message)
     
     citi_info = d['results'][0]
     
@@ -65,16 +66,22 @@ def get_meteoblue_params(city_name: str) -> tuple:
 
 def get_meteoblue_pic_url(url_suffix_for_sig) -> str:
     url = cfg.METEOBLUE_GET_CITI_INFO_PREFIX + url_suffix_for_sig
-    body = str(utils.get(url).read())
-    picture_url_start = body.find(cfg.METEOBLUE_PICTURE_URL_PREFIX)
+    cookies = {'temp':'CELSIUS', 'darkmode': 'true', 'locale': 'ru_RU'}
+    response = requests.get(url, cookies=cookies)
+    body = response.text
+    
+    picture_url_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_PICTURE_URL_PREFIX, body)]
+    if len(picture_url_starts) != 1:
+        raise my_exceptions.MeteoblueParsingError(
+                f'found picture url starts: {picture_url_starts}')
+    picture_url_start = picture_url_starts[0]
     picture_url_len = body[picture_url_start:].find(' ')
     picture_url = body[picture_url_start:picture_url_start + picture_url_len]
     picture_url = picture_url.replace('&amp;', '&')
     return picture_url
 
 
-def get_picture_url_from_meteoblue_params(city_name: str) -> str:
-    url = cfg.METEOBLUE_GEOCODING_PREFIX + city_name
+def get_picture_url(city_name: str) -> str:
     city, iso2, lat, lon, asl, tz, url_suffix_for_sig \
             = get_meteoblue_params(city_name)
     
@@ -91,9 +98,10 @@ def get_picture_url_from_meteoblue_params(city_name: str) -> str:
 
 
 def get_weather_image(city_name: str) -> io.BytesIO:
-    picture_url = get_picture_url_from_meteoblue_params(city_name)
-    img = Image.open(urlopen(picture_url))
-    area = (0, 0, 2230, 550)
+    picture_url = get_picture_url(city_name)
+    response = requests.get(picture_url)
+    img = Image.open(io.BytesIO(response.content))
+    area = (0, 0, img.width, 550)
     cropped_img = img.crop(area)
     
     bytes_object = io.BytesIO()
@@ -102,27 +110,31 @@ def get_weather_image(city_name: str) -> io.BytesIO:
     return bytes_object
 
 
-def get_openweathermap_coordinates(city_name: str) -> str:
-    city_name_enc = urllib.parse.quote(city_name.encode('utf-8'))
+def get_openweathermap_coordinates_and_name(city_name: str) -> tuple[str, str]:
     url = f'{cfg.OPENWEATHERMAP_GEOCODING_PREFIX}' \
-            f'&q={city_name_enc}' \
+            f'&q={city_name}' \
             f'&appid={api_keys.OPENWEATHERMAP_ORG_APP_ID}'
-    message = utils.get(url)
-    d = json.load(message)[0]
+
+    response = requests.get(url)
+    message = response.text
+    d = json.loads(message)[0]
+    
     city_ru_name = d.get('local_names', {}).get('ru', city_name)
     lat = d['lat']
     lon = d['lon']
-    return f'lat={lat}&lon={lon}'
+    coordinates = f'lat={lat}&lon={lon}'
+    return coordinates, city_ru_name
 
 
 def http_get_weather(city_name: str) -> Weather:
-    coordinates = get_openweathermap_coordinates(city_name)
-    WEATHER_SITE = f'{cfg.OPENWEATHERMAP_SITE_PREFIX}' \
-            f'?{cfg.OPENWEATHERMAP_SITE_FIXED_PARAMS}' \
+    coordinates, city_ru_name = get_openweathermap_coordinates_and_name(city_name)
+    weather_url = f'{cfg.OPENWEATHERMAP_GET_WEATHER_PREFIX}' \
+            f'?{cfg.OPENWEATHERMAP_GET_WEATHER_FIXED_PARAMS}' \
             f'&{coordinates}' \
             f'&appid={api_keys.OPENWEATHERMAP_ORG_APP_ID}'
-    message = utils.get(WEATHER_SITE)
-    d = json.load(message)
+    response = requests.get(weather_url)
+    message = response.text
+    d = json.loads(message)
     temp_celsius = float(d['main']['temp'])  # - 273.15
     pressure_mm_hg = int(float(d['main']['pressure']) * 3 / 4)
     humidity_percent: int = int(d['main']['humidity'])
@@ -132,7 +144,7 @@ def http_get_weather(city_name: str) -> Weather:
     
     # weather_icon = d['weather'][0]['icon']
     
-    return Weather(city_name, 
+    return Weather(city_ru_name, 
                    temp_celsius, 
                    pressure_mm_hg, 
                    humidity_percent, 

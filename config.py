@@ -24,4 +24,5 @@ METEOBLUE_PICTURE_URL_PREFIX = 'https://my.meteoblue.com/visimage/meteogram_web_
 
 TELEGRAM_URL_PREFIX = 'https://api.telegram.org/bot'
 
+BOT_NAME = 'kobuleti_weather_bot'
 DEFAULT_CITY = 'Кобулети'

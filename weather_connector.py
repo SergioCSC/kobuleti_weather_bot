@@ -66,7 +66,8 @@ def get_meteoblue_params(city_name: str) -> tuple:
 
 def get_meteoblue_pic_url(url_suffix_for_sig) -> str:
     url = cfg.METEOBLUE_GET_CITI_INFO_PREFIX + url_suffix_for_sig
-    cookies = {'temp':'CELSIUS', 'darkmode': 'true', 'locale': 'ru_RU'}
+    cookies = {'temp':'CELSIUS', 'darkmode': 'false',
+               'locale': 'ru_RU', 'speed': 'METER_PER_SECOND'}
     response = requests.get(url, cookies=cookies)
     body = response.text
     
@@ -101,11 +102,18 @@ def get_weather_image(city_name: str) -> io.BytesIO:
     picture_url = get_picture_url(city_name)
     response = requests.get(picture_url)
     img = Image.open(io.BytesIO(response.content))
-    area = (0, 0, img.width, 550)
-    cropped_img = img.crop(area)
+    h_1 = 600
+    h_2 = h_1 + (img.height - h_1) // 2
+    h_3 = h_2 + (img.height - h_1) // 2
+    area_1 = (0, 0, img.width, h_1)
+    area_2 = (0, h_1, img.width, h_2)
+    area_3 = (0, h_2, img.width, h_3)
+    cropped_3 = img.crop(area_3)
+    img.paste(cropped_3, area_2)
+    result = img.crop((0, 0, img.width, h_2))
     
     bytes_object = io.BytesIO()
-    cropped_img.save(bytes_object, format='png')
+    result.save(bytes_object, format='png')
     bytes_object.seek(0)
     return bytes_object
 

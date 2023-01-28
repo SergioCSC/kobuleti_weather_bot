@@ -10,6 +10,7 @@ test_event_bridge = {
     }
 
 short_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/s\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
+long_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/k@kobuleti_weather_bot\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
 magnitogorsk_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/магнитогорск\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
 petersburg_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/Санкт-Петербург\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
 muhin_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/мухосранск\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
@@ -77,6 +78,9 @@ test_tg_short_command = {
         "body": short_command_body,
         "isBase64Encoded": "False"
     }
+
+test_long_command = test_tg_short_command.copy()
+test_long_command['body'] = long_command_body
 
 test_magnitogorsk_command = test_tg_short_command.copy()
 test_magnitogorsk_command['body'] = magnitogorsk_command_body

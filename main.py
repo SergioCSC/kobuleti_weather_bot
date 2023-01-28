@@ -1,4 +1,5 @@
 import config as cfg
+import utils
 import base
 import weather_connector
 import tg_api_connector
@@ -21,7 +22,7 @@ def get_city_and_chats(event) -> tuple[str, set[int]]:
         update = event.get('body')
         assert update
         update = json.loads(update)
-        print(update)
+        utils.print_with_time(update)
         key = 'message'
         if key in update:
             chat_id = int(update[key]['chat']['id'])
@@ -38,8 +39,9 @@ def get_city_and_chats(event) -> tuple[str, set[int]]:
                 if bot_mention_position != -1:
                     text = text[:bot_mention_position]
                 city_name = text.strip()
-                # base.add_???(???) TODO
-                return city_name, {chat_id}
+                if len(city_name) > 1: 
+                    # base.add_???(???) TODO
+                    return city_name, {chat_id}
             return default_city_name, {chat_id}
     return '', {}
 
@@ -48,17 +50,21 @@ def lambda_handler(event: dict, context) -> dict:
     city_name, chat_set = get_city_and_chats(event)
     if not city_name:
         return {'statusCode': 200, 'body': 'Success'}
-    print(f'{city_name = }')
+    utils.print_with_time(f'{city_name = }')
     try:
+        # utils.print_with_time(f'START got text from openweathermap.org')
         weather = weather_connector.http_get_weather(city_name)
         message = weather_connector.create_weather_message(weather)
+        utils.print_with_time(f'got text from openweathermap.org')
     except Exception as e:
-        print(f'Exception {e} in weather_connector.http_get_weather({city_name})')
+        utils.print_with_time(f'Exception {e} in weather_connector.http_get_weather({city_name})')
         message = random.choice(not_found_weather_messages)
     try:
+        # utils.print_with_time(f'START got image from meteoblue.com')
         image: io.BytesIO = weather_connector.get_weather_image(city_name)
+        # utils.print_with_time(f'got image from meteoblue.com')
     except Exception as e:
-        print(f'Exception {e} in weather_connector.get_weather_image({city_name})')
+        utils.print_with_time(f'Exception {e} in weather_connector.get_weather_image({city_name})')
         image = None
         if message not in not_found_weather_messages:
             message += '\n\nМожно ваш паспорт? Спасибо. Таааак ...' \
@@ -69,7 +75,9 @@ def lambda_handler(event: dict, context) -> dict:
                 ' подходите завтра к 8 утра в регистратуру с анализами.' \
                 ' За результатами через 60 рабочих дней. Что вам ещё?' \
                 ' Нет, через госуслуги нельзя. До свидания.\n\nИшь, прогноз погоды им подавай'
+    # utils.print_with_time(f'START sending messages to chats')
     tg_api_connector.send_message(chat_set, message, image)
+    utils.print_with_time(f'sent messages to chats')
     return {'statusCode': 200, 'body': 'Success'}
 
 

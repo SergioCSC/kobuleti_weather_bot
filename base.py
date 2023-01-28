@@ -9,14 +9,11 @@ TABLE = None
 
 
 def init_table() -> 'boto3.resources.factory.dynamodb.Table':
+    utils.print_with_time('START TABLE INITIALIZATION')
     dynamodb_client = boto3.client('dynamodb', region_name=cfg.AWS_REGION)
     dynamodb_resource = boto3.resource('dynamodb', region_name=cfg.AWS_REGION)
     table = create_table(dynamodb_client, dynamodb_resource, TABLE_NAME)
-
-    print(f'{dynamodb_client = }, {type(dynamodb_client) = }')
-    print(f'{dynamodb_resource = }, {type(dynamodb_resource) = }')
-    print(f'{table = }, {type(table) = }')
-    
+    utils.print_with_time('FINISH TABLE INITIALIZATION')
     return table
 
 
@@ -45,9 +42,9 @@ def create_table(dynamodb_client: 'botocore.client.DynamoDB',
             }
         )
         table.wait_until_exists()
-        print('Table created successfully!')
+        utils.print_with_time('Table created successfully!')
     except dynamodb_client.exceptions.ResourceInUseException:
-        print(f'ResourceInUseException. Probably, db {table_name} already exists.')
+        utils.print_with_time(f'ResourceInUseException. Probably, db {table_name} already exists.')
         table = dynamodb_resource.Table(table_name)
     return table
 
@@ -68,7 +65,7 @@ def add_chat(chat_id: int) -> None:
         'id': chat_id,
     }
     TABLE.put_item(Item=item)
-    print(f'Item {chat_id} putted into the table')
+    utils.print_with_time(f'Item {chat_id} has been put into the table')
     
 
 TABLE = init_table()

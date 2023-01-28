@@ -1,4 +1,5 @@
 import config as cfg
+import utils
 import api_keys
 
 import requests
@@ -26,13 +27,15 @@ def send_message(chat_set: set[int], message: str, image: io.BytesIO) -> None:
         )
         if image:
             image.seek(0)
-        print(telegram_request_url)
         try:
+            utils.print_with_time(f'before sending telegram message')
             result = requests.post(telegram_request_url, 
                                    files={'photo': image} if image else {})
+            utils.print_with_time(f'{telegram_request_url = }')
             if result.status_code != 200:
-                print(f'{telegram_request_url = }\n{result.text = }')
+                utils.print_with_time(f'{telegram_request_url = }\n{result.text = }')
         except HTTPError as e:
-            print(f'HTTPError for url: {telegram_request_url}\n\nException: {e}')
+            utils.print_with_time(f'HTTPError for url: {telegram_request_url}\n\nException: {e}')
+    
     if image:
         image.seek(0)

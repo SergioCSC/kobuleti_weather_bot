@@ -1,4 +1,5 @@
 import config as cfg
+import utils
 import api_keys
 import my_exceptions
 
@@ -99,8 +100,13 @@ def get_picture_url(city_name: str) -> str:
 
 
 def get_weather_image(city_name: str) -> io.BytesIO:
+    # utils.print_with_time(f'    START getting picture url')
     picture_url = get_picture_url(city_name)
+    utils.print_with_time(f'    got picture url')
+    # utils.print_with_time(f'    START getting picture')
     response = requests.get(picture_url)
+    utils.print_with_time(f'    got picture')
+    # utils.print_with_time(f'    START cropping picture')
     img = Image.open(io.BytesIO(response.content))
     h_1 = 600
     h_2 = h_1 + (img.height - h_1) // 2
@@ -115,6 +121,7 @@ def get_weather_image(city_name: str) -> io.BytesIO:
     bytes_object = io.BytesIO()
     result.save(bytes_object, format='png')
     bytes_object.seek(0)
+    utils.print_with_time(f'    cropped picture')
     return bytes_object
 
 

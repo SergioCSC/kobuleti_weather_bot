@@ -26,3 +26,6 @@ TELEGRAM_URL_PREFIX = 'https://api.telegram.org/bot'
 
 BOT_NAME = 'kobuleti_weather_bot'
 DEFAULT_CITY = 'Кобулети'
+
+DEFAULT_DARKMODE = False
+SWITCH_DARKMODE_COMMAND = '/dark'

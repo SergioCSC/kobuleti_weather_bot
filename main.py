@@ -3,18 +3,35 @@ import utils
 import base
 import weather_connector
 import tg_api_connector
-from not_found_messages import not_found_weather_messages
+from not_found_messages import not_found_weather_texts
+from not_found_messages import not_found_weather_image_text
 
 import io
 import json
 import tests
 import random
+from enum import Enum, auto
+from typing import NamedTuple, Optional
+from functools import cache
 
-        
-def get_city_and_chats(event) -> tuple[str, set[int]]:
+
+class EventType(Enum):
+    SCHEDULED = auto()
+    CITY = auto()
+    SWITCH_DARKMODE = auto()
+    OTHER = auto()
+
+
+class EventData(NamedTuple):
+    type: EventType
+    chat_id: int
+    city_name: str
+
+
+def parse_event(event) -> EventData:
     default_city_name = cfg.DEFAULT_CITY
     if event.get('detail-type') == 'Scheduled Event':  # event initiated by Event Bridge
-        return default_city_name, base.get_chat_set()  # TODO
+        return EventData(EventType.SCHEDULED, None, None)
     elif event.get('httpMethod') in (
         'GET',
         'POST',
@@ -26,59 +43,94 @@ def get_city_and_chats(event) -> tuple[str, set[int]]:
         key = 'message'
         if key in update:
             chat_id = int(update[key]['chat']['id'])
-            base.add_chat(chat_id)
             # message_type = update[key].get('entities',[{}])[0].get('type')
             
             text = update[key].get('text', '')
             if not text:
-                return '', {}
-            text = bytes(text, 'utf-8').decode('utf-8')
+                return EventData(EventType.OTHER, None, None)
+            text = bytes(text, 'utf-8').decode('utf-8').strip()
+            
+            bot_mention_position = text.find(f'@{cfg.BOT_NAME}')
+            if bot_mention_position != -1:
+                text = text[:bot_mention_position].strip()
+            
+            if text == '/dark':
+                return EventData(EventType.SWITCH_DARKMODE, chat_id, None)
+            
             if text.startswith('/') and len(text) > 2:  # city command
                 text = text[1:].strip()
-                bot_mention_position = text.find(f'@{cfg.BOT_NAME}')
-                if bot_mention_position != -1:
-                    text = text[:bot_mention_position]
                 city_name = text.strip()
                 if len(city_name) > 1: 
                     # base.add_???(???) TODO
-                    return city_name, {chat_id}
-            return default_city_name, {chat_id}
-    return '', {}
+                    return EventData(EventType.CITY, chat_id, city_name)
+            return EventData(EventType.CITY, chat_id, default_city_name)
+    return EventData(EventType.OTHER, None, None)
+
+
+@cache
+def create_message(city_name: str, dark_mode: bool) -> \
+        tuple[str, Optional[io.BytesIO]]:
+    weather_text = weather_connector.get_weather_text(city_name)
+    weather_image = weather_connector.get_weather_image(city_name, dark_mode)
+    
+    not_found_start = f'{city_name}, говорите ... \n\n'
+    
+    if weather_text == '':
+        text_body = random.choice(not_found_weather_texts)
+        weather_text = not_found_start + text_body
+
+    if weather_image is None:
+        if not weather_text.startswith(not_found_start):
+            weather_text += not_found_weather_image_text
+    
+    return weather_text, weather_image
 
 
 def lambda_handler(event: dict, context) -> dict:
-    city_name, chat_set = get_city_and_chats(event)
-    if not city_name:
-        return {'statusCode': 200, 'body': 'Success'}
-    utils.print_with_time(f'{city_name = }')
-    try:
-        # utils.print_with_time(f'START got text from openweathermap.org')
-        weather = weather_connector.http_get_weather(city_name)
-        message = weather_connector.create_weather_message(weather)
-        utils.print_with_time(f'got text from openweathermap.org')
-    except Exception as e:
-        utils.print_with_time(f'Exception {e} in weather_connector.http_get_weather({city_name})')
-        message = random.choice(not_found_weather_messages)
-    try:
-        # utils.print_with_time(f'START got image from meteoblue.com')
-        image: io.BytesIO = weather_connector.get_weather_image(city_name)
-        # utils.print_with_time(f'got image from meteoblue.com')
-    except Exception as e:
-        utils.print_with_time(f'Exception {e} in weather_connector.get_weather_image({city_name})')
-        image = None
-        if message not in not_found_weather_messages:
-            message += '\n\nМожно ваш паспорт? Спасибо. Таааак ...' \
-                ' Галя, не видишь, я занята. Что там у вас  ... аааа, ну конечно!' \
-                ' А вы вообще в курсе, что вам никакие графики никаких температур не положены?' \
-                ' Да, совсем. Не задерживайте очередь.' \
-                ' Если вам так надо,' \
-                ' подходите завтра к 8 утра в регистратуру с анализами.' \
-                ' За результатами через 60 рабочих дней. Что вам ещё?' \
-                ' Нет, через госуслуги нельзя. До свидания.\n\nИшь, прогноз погоды им подавай'
-    # utils.print_with_time(f'START sending messages to chats')
-    tg_api_connector.send_message(chat_set, message, image)
+    event_data = parse_event(event)
+    
+    success = {'statusCode': 200, 'body': 'Success'}
+    
+    if event_data.type is EventType.OTHER:
+        return success
+    
+    elif event_data.type is EventType.SWITCH_DARKMODE:
+        chat_id = event_data.chat_id
+        dark_mode = base.switch_darkmode(chat_id)
+        text = f'Теперь картинка будет {"тёмная" if dark_mode else "светлая"}'
+        tg_api_connector.send_message({chat_id}, text, None)
+        return success
+    
+    elif event_data.type is EventType.SCHEDULED:
+        chats_with_params = base.get_chats_with_params()
+        for chat_info in chats_with_params:
+            chat_id = chat_info['id']
+            dark_mode = chat_info.get('dark_mode', False)
+            city_names = chat_info.get('cities', [cfg.DEFAULT_CITY])
+            for city_name in city_names:
+                text, image = create_message(city_name, dark_mode)
+                tg_api_connector.send_message({chat_id}, text, image)
+    
+    elif event_data.type is EventType.CITY:
+        chat_id = event_data.chat_id
+        city_name = event_data.city_name
+        
+        chats_with_params = base.get_chats_with_params()
+        base.add_chat(chat_id)
+        
+        dark_mode = cfg.DEFAULT_DARKMODE
+        for chat_info in chats_with_params:
+            if chat_info['id'] == chat_id:
+                dark_mode = chat_info.get('dark_mode', cfg.DEFAULT_DARKMODE)
+                break
+        
+        text, image = create_message(city_name, dark_mode)
+        tg_api_connector.send_message({chat_id}, text, image)
+    else:
+        assert False
+    
     utils.print_with_time(f'sent messages to chats')
-    return {'statusCode': 200, 'body': 'Success'}
+    return success
 
 
 if __name__ == '__main__':

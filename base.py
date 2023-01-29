@@ -9,23 +9,82 @@ TABLE_NAME = 'weather-bot-chats'
 TABLE = None
 
 
-def init_table() -> 'boto3.resources.factory.dynamodb.Table':
+def get_chats_with_params() -> list[dict]:
+    # return {534111842, 253766343, -1001899507998, -1001889227859, 899881657}
+    #         me       , Leh      ,test_group_bots,      monastery, l}
+    if not cfg.IN_AWS_LAMBDA:
+        return {
+            534111842: 
+                {'dark_mode': False,
+                 'cities' : [
+                        'Вышний Волочек',
+                        'мухосранск'
+                    ]
+                 },
+            -1001899507998:
+                {'cities' : [
+                        'New York',
+                        'f',
+                        'Вышний Волочек'
+                    ]
+                 },
+        }
+    response = TABLE.scan()
+    items = response['Items']
+    return items
+
+
+def add_chat(chat_id: int) -> None:
+    item = _get_item(chat_id)
+    
+    if not item:
+        item = {'id': chat_id}
+        TABLE.put_item(Item=item)
+    
+    utils.print_with_time(f'Item {chat_id} has been put into the table')
+
+
+def switch_darkmode(chat_id: int) -> bool:
+    item = _get_item(chat_id)
+    dark_mode = item.get('dark_mode', cfg.DEFAULT_DARKMODE)
+    dark_mode = not dark_mode
+    item = {'id': chat_id, 'dark_mode': dark_mode}
+    TABLE.put_item(Item=item)
+    utils.print_with_time(f'Item {chat_id} with {dark_mode = }' \
+                            f' has been put into the table')
+    return dark_mode
+
+
+def _get_item(chat_id: int) -> dict:
+    try:
+        response = TABLE.get_item(Key={'id': chat_id})
+    except ClientError as err:
+        utils.print_with_time(
+            "Couldn't get chat %s from table %s. Here's why: %s: %s",
+            chat_id, TABLE.name,
+            err.response['Error']['Code'], err.response['Error']['Message'])
+        raise
+    else:
+        return response.get('Item', {})
+
+
+def _init_table() -> 'boto3.resources.factory.dynamodb.Table':
     utils.print_with_time('START TABLE INITIALIZATION')
     dynamodb_client = boto3.client('dynamodb', region_name=cfg.AWS_REGION)
     dynamodb_resource = boto3.resource('dynamodb', region_name=cfg.AWS_REGION)
     
     table = dynamodb_resource.Table(TABLE_NAME)
-    if check_if_table_exists(table):
+    if _check_if_table_exists(table):
         utils.print_with_time('FINISH TABLE INITIALIZATION')
         return table
     
-    table = create_table(dynamodb_client, dynamodb_resource, TABLE_NAME)
+    table = _create_table(dynamodb_client, dynamodb_resource, TABLE_NAME)
     
     utils.print_with_time('FINISH TABLE INITIALIZATION')
     return table
 
 
-def check_if_table_exists(table: 'boto3.resources.factory.dynamodb.Table') -> bool:
+def _check_if_table_exists(table: 'boto3.resources.factory.dynamodb.Table') -> bool:
     try:
         table.load()
         exists = True
@@ -41,7 +100,7 @@ def check_if_table_exists(table: 'boto3.resources.factory.dynamodb.Table') -> bo
     return exists
 
 
-def create_table(dynamodb_client: 'botocore.client.DynamoDB',
+def _create_table(dynamodb_client: 'botocore.client.DynamoDB',
                  dynamodb_resource: 'boto3.resources.factory.dynamodb.ServiceResource',
                  table_name: str):
     try:
@@ -73,23 +132,4 @@ def create_table(dynamodb_client: 'botocore.client.DynamoDB',
     return table
 
 
-def get_chat_set() -> set[int]:
-    # return {534111842, 253766343, -1001899507998, -1001889227859, }
-    #         me       , Leh      ,test_group_bots,      monastery, l}
-    if not cfg.IN_AWS_LAMBDA:
-        return {534111842, -1001899507998}
-    response = TABLE.scan()
-    items = response['Items']
-    return set(item['id'] for item in items)
-
-
-def add_chat(chat_id: int) -> None:
-    TABLE.load()
-    item = {
-        'id': chat_id,
-    }
-    TABLE.put_item(Item=item)
-    utils.print_with_time(f'Item {chat_id} has been put into the table')
-    
-
-TABLE = init_table()
+TABLE = _init_table()

@@ -57,6 +57,10 @@ def parse_event(event) -> EventData:
             if text == '/dark':
                 return EventData(EventType.SWITCH_DARKMODE, chat_id, None)
             
+            is_private = update[key]['chat'].get('type') == 'private'
+            if is_private and not text.startswith('/'):
+                text = '/' + text
+
             if text.startswith('/') and len(text) > 2:  # city command
                 text = text[1:].strip()
                 city_name = text.strip()

@@ -9,6 +9,7 @@ test_event_bridge = {
         "detail": {},
     }
 
+switch_darkmode_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":534111842,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/dark\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
 short_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/s\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
 long_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/k@kobuleti_weather_bot\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
 magnitogorsk_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/магнитогорск\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
@@ -90,3 +91,6 @@ test_tg_petersburg_command['body'] = petersburg_command_body
 
 test_tg_muhin_command = test_tg_short_command.copy()
 test_tg_muhin_command['body'] = muhin_command_body
+
+test_switch_dark_mode_command = test_tg_short_command.copy()
+test_switch_dark_mode_command['body'] = switch_darkmode_command_body

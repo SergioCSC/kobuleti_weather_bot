@@ -7,9 +7,10 @@ import io
 import sys
 import urllib
 from urllib.error import HTTPError
+from typing import Optional
 
 
-def send_message(chat_set: set[int], message: str, image: io.BytesIO) -> None:
+def send_message(chat_set: set[int], message: str, image: Optional[io.BytesIO]) -> None:
     message = message.replace('!', '\!')
     message = urllib.parse.quote(message.encode('utf-8'))
     message = message.replace('-', '\-')

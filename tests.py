@@ -1,14 +1,15 @@
-test_event_bridge = {
-        "id": "cdc73f9d-aea9-11e3-9d5a-835b769c0d9c",
-        "detail-type": "Scheduled Event",
-        "source": "aws.events",
-        "account": "123456789012",
-        "time": "1970-01-01T00:00:00Z",
-        "region": "us-east-1",
-        "resources": ["arn:aws:events:us-east-1:123456789012:rule/ExampleRule"],
-        "detail": {},
-    }
+# test_event_bridge = {
+#         "id": "cdc73f9d-aea9-11e3-9d5a-835b769c0d9c",
+#         "detail-type": "Scheduled Event",
+#         "source": "aws.events",
+#         "account": "123456789012",
+#         "time": "1970-01-01T00:00:00Z",
+#         "region": "us-east-1",
+#         "resources": ["arn:aws:events:us-east-1:123456789012:rule/ExampleRule"],
+#         "detail": {},
+#     }
 
+add_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":534111842,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/add@kobuleti_weather_bot\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
 switch_darkmode_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":534111842,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/dark\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
 short_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/s\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
 long_command_body = "{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":-1001899507998,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"/k@kobuleti_weather_bot\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}"
@@ -79,6 +80,9 @@ test_tg_short_command = {
         "body": short_command_body,
         "isBase64Encoded": "False"
     }
+
+test_add_cities_command = test_tg_short_command.copy()
+test_add_cities_command['body'] = add_command_body
 
 test_long_command = test_tg_short_command.copy()
 test_long_command['body'] = long_command_body

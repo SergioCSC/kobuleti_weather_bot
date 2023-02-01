@@ -3,6 +3,7 @@ import utils
 import api_keys
 import my_exceptions
 from not_found_messages import not_found_weather_texts
+from city import City
 
 from PIL import Image
 
@@ -12,6 +13,7 @@ import json
 import requests
 from typing import NamedTuple
 from typing import Optional
+from typing import Generator
 
 
 class Weather(NamedTuple):
@@ -97,23 +99,30 @@ def _create_weather_message(w: Weather) -> str:
     return message
 
 
-def _get_meteoblue_params(city_name: str) -> tuple:
-    url = cfg.METEOBLUE_GEOCODING_PREFIX + city_name
+def get_city_options_from_name(city_name: str) -> Generator[tuple, None, None]:
+    url = cfg.METEOBLUE_GEOCODING_PREFIX + cfg.METEOBLUE_GEOCODING_FIXED_PARAMS + city_name
     cookies = {'locale': 'ru_RU'}
     response = requests.get(url, cookies=cookies)
     message = response.text
     d = json.loads(message)
     
-    citi_info = d['results'][0]
+    for citi_info in d['results']:
     
-    city = citi_info['name']
-    iso2 = citi_info['iso2']
-    lat = citi_info['lat']
-    lon = citi_info['lon']
-    asl = citi_info['asl']
-    tz = citi_info['timezone']
-    url_suffix_for_sig = citi_info['url']
-    return city, iso2, lat, lon, asl, tz, url_suffix_for_sig
+        local_name = citi_info['name']
+        iso2 = citi_info['iso2']
+        country = citi_info['counrty']
+        admin_subject = citi_info['admin1']
+        lat = citi_info['lat']
+        lon = citi_info['lon']
+        asl = citi_info['asl']
+        population = citi_info['population']
+        distance = citi_info['distance']
+        tz = citi_info['timezone']
+        url_suffix_for_sig = citi_info['url']
+        
+        city = City(local_name, iso2, country, admin_subject, lat, lon, asl,
+                    population, distance, tz, url_suffix_for_sig)
+        yield city
 
 
 def _get_meteoblue_pic_url(url_suffix_for_sig: str, dark_mode: bool) -> str:
@@ -137,7 +146,7 @@ def _get_meteoblue_pic_url(url_suffix_for_sig: str, dark_mode: bool) -> str:
 
 def _get_picture_url(city_name: str, dark_mode: bool) -> str:
     city, iso2, lat, lon, asl, tz, url_suffix_for_sig \
-            = _get_meteoblue_params(city_name)
+            = get_city_options_from_name(city_name)
     
     
     # iso2 = iso2.lower()

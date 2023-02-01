@@ -18,7 +18,8 @@ from functools import cache
 class EventType(Enum):
     SCHEDULED = auto()
     CITY = auto()
-    ADD_CITIES = auto()
+    ADD_CITY = auto()
+    CHOOSE_CITY = auto()
     CLEAR_CITIES = auto()
     SHOW_CITIES = auto()
     LIST_CITIES = auto()
@@ -28,14 +29,15 @@ class EventType(Enum):
 
 class EventData(NamedTuple):
     type: EventType
-    chat_id: int
-    city_names: list[str]
+    chat_id: Optional[int]
+    city_name: str
+    city_num: Optional[int]
 
 
 def parse_event(event) -> EventData:
     default_city_name = cfg.DEFAULT_CITY
     if event.get('detail-type') == 'Scheduled Event':  # event initiated by Event Bridge
-        return EventData(EventType.SCHEDULED, None, [])
+        return EventData(EventType.SCHEDULED, None, '', None)
     elif event.get('httpMethod') in (
         'GET',
         'POST',
@@ -51,7 +53,7 @@ def parse_event(event) -> EventData:
             
             text = update[key].get('text', '')
             if not text:
-                return EventData(EventType.OTHER, None, [])
+                return EventData(EventType.OTHER, None, '', None)
             text = bytes(text, 'utf-8').decode('utf-8').strip()
             
             is_private = update[key]['chat'].get('type') == 'private'
@@ -63,42 +65,33 @@ def parse_event(event) -> EventData:
                 text = text[:bot_mention_position].strip()
 
             if text == '/dark':
-                return EventData(EventType.SWITCH_DARKMODE, chat_id, [])
+                return EventData(EventType.SWITCH_DARKMODE, chat_id, '', None)
             
             if text == '/clear':
-                return EventData(EventType.CLEAR_CITIES, chat_id, [])
+                return EventData(EventType.CLEAR_CITIES, chat_id, '', None)
             
             if text == '/list':
-                return EventData(EventType.LIST_CITIES, chat_id, [])
+                return EventData(EventType.LIST_CITIES, chat_id, '', None)
             
             if text == '/show':
-                return EventData(EventType.SHOW_CITIES, chat_id, [])
+                return EventData(EventType.SHOW_CITIES, chat_id, '', None)
             
             if text.startswith('/add'):
-                city_names = text[len('/add'):].strip().split(',')
-                city_names = [city.strip() for city in city_names if city]
-                return EventData(EventType.ADD_CITIES, chat_id, city_names)
+                city_name = text[len('/add'):].strip()
+                return EventData(EventType.ADD_CITY, chat_id, city_name, None)
 
-            
+            if text.startswith('/') and text[1:].strip().isdigit():
+                number = int(text[1:].strip())
+                return EventData(EventType.CHOOSE_CITY, chat_id, None, number)
+
             if text.startswith('/') and len(text) > 2:  # city command
-                text = text[1:].strip()
-                city_name = text.strip()
+                city_name = text[1:].strip()
                 if len(city_name) > 1:
-                    return EventData(EventType.CITY, chat_id, [city_name])
-            return EventData(EventType.CITY, chat_id, [default_city_name])
-    return EventData(EventType.OTHER, None, [])
-
-
-def update_db(event_data: EventData) -> Any:
-    if event_data.type is EventType.SWITCH_DARKMODE:
-        feedback = base.switch_darkmode(event_data.chat_id)
-    elif event_data.type is EventType.ADD_CITIES:
-        feedback = base.add_cities(event_data.chat_id, event_data.city_names)
-    elif event_data.type is EventType.CLEAR_CITIES:
-        feedback = base.clear_cities(event_data.chat_id)
-    else:
-        assert False
-    return feedback
+                    return EventData(EventType.CITY, chat_id, city_name, None)
+            
+            if text == '/k':
+                return EventData(EventType.CITY, chat_id, default_city_name, None)
+    return EventData(EventType.OTHER, None, '', None)
     
 
 def lambda_handler(event: dict, context) -> dict:
@@ -112,19 +105,54 @@ def lambda_handler(event: dict, context) -> dict:
         chats_with_params = base.get_chats_with_params()
         for chat_id, chat_info in chats_with_params.items():
             dark_mode = chat_info.get('dark_mode', cfg.DEFAULT_DARKMODE)
-            city_names = chat_info.get('cities', [])
-            for city_name in city_names:
+            city_name = chat_info.get('cities', [])
+            for city_name in city_name:
                 text, image = create_message(city_name, dark_mode)
                 tg_api_connector.send_message({chat_id}, text, image)
         return success
+    
+    chat_id = event_data.chat_id
+    
+    # if event_data.type is EventType.CHOOSE_CITY:
+    #     city_num = event_data.city_num
+    #     command_type, city_options = base.load_command(chat_id)
+    #     chosen_city = city_options[city_num]  # TODO what if no such num ?
+        
+        # if command_type is EventType.CITY:
+        #     pass  # TODO ???
+        # elif command_type is EventType.ADD_CITY:
+        #     base.add_city(chosen_city)
+            
+        #     city_name = chosen_city.local_name  
+            
+        #     text = f'Буду напоминать о {", ".join(city_name)} по утрам'
+        #     # old_cities_without_new = ???  # db_update_feedback
+        #     # if old_cities_without_new:
+        #     #     text += '. A ещё о ' + ', '.join(old_cities_without_new)
+            
+        #     tg_api_connector.send_message({chat_id}, text, None)
+        #     return success
 
-    if event_data.type in (EventType.SWITCH_DARKMODE, EventType.ADD_CITIES, EventType.CLEAR_CITIES):
+        # else:
+        #     assert False
+
+    # if event_data.type in (EventType.CITY, EventType.ADD_CITY):
+    #     city_options = weather_connector.get_city_options_from_name(event_data.city_name)
+
+    #     db_update_feedback = update_db(event_data, city_options)
+        
+    #     text = 'Варианты: ' + ', '.join(city.local_name for city in city_options)
+    #     assert isinstance(chat_id, int)
+    #     tg_api_connector.send_message({chat_id}, text, None)
+        
+    #     return success
+    
+    if event_data.type in (EventType.SWITCH_DARKMODE, EventType.CLEAR_CITIES, EventType.ADD_CITY):
         db_update_feedback = update_db(event_data)
 
-    assert event_data.type in (EventType.ADD_CITIES, EventType.CITY, EventType.CLEAR_CITIES, 
+    assert event_data.type in (EventType.ADD_CITY, EventType.CITY, EventType.CLEAR_CITIES, 
             EventType.LIST_CITIES, EventType.SHOW_CITIES, EventType.SWITCH_DARKMODE)
 
-    chat_id = event_data.chat_id
     
     if event_data.type is EventType.SWITCH_DARKMODE:
         dark_mode = db_update_feedback
@@ -132,28 +160,30 @@ def lambda_handler(event: dict, context) -> dict:
         tg_api_connector.send_message({chat_id}, text, None)
         return success
     
-    assert event_data.type in (EventType.ADD_CITIES, EventType.CLEAR_CITIES, 
+    assert event_data.type in (EventType.ADD_CITY, EventType.CLEAR_CITIES, 
             EventType.LIST_CITIES, EventType.SHOW_CITIES, EventType.CITY)
     
-    if event_data.type in (EventType.CLEAR_CITIES, EventType.ADD_CITIES):
-        if event_data.type is EventType.CLEAR_CITIES:
-            text = f'Напоминалки обо всех городах удалены'
-        elif event_data.type is EventType.ADD_CITIES:
-            city_names = event_data.city_names
-            old_without_new_cities = db_update_feedback
-            if not city_names or not city_names[0]:
-                text = f'Здравствуйте. Кажется, вы нажали команду\n\n/add\n\nв меню.' \
-                        f' Вам-то хорошо, нажали и нажали. А наш департамент' \
-                        f' на ушах: все хотят знать, какой город вы хотите добавить' \
-                        f' в напоминалки. Все бегают, шумят, волосы рвут. ' \
-                        f' Ставки делают, морды бьют. И никто ничего' \
-                        f' не знает, никто не за что не отвечает. Что за народ!' \
-                        f' можно вас попросить сказать им уже город, а то они всё тут разнесут?' \
-                        f' Ну, например, так: \n\n/add Ярославль'
-            else:
-                text = f'Буду напоминать о {", ".join(city_names)} по утрам'
-                if old_without_new_cities:
-                    text += '. A ещё о ' + ', '.join(old_without_new_cities)
+    if event_data.type is EventType.CLEAR_CITIES:
+        text = f'Напоминалки обо всех городах удалены'
+        tg_api_connector.send_message({chat_id}, text, None)
+        return success
+    
+    if event_data.type is EventType.ADD_CITY:
+        city_names = event_data.city_names
+        old_without_new_cities = db_update_feedback
+        if not city_names or not city_names[0]:
+            text = f'Здравствуйте. Кажется, вы нажали команду\n\n/add\n\nв меню.' \
+                    f' Вам-то хорошо, нажали и нажали. А наш департамент' \
+                    f' на ушах: все хотят знать, какой город вы хотите добавить' \
+                    f' в напоминалки. Все бегают, шумят, волосы рвут. ' \
+                    f' Ставки делают, морды бьют. И никто ничего' \
+                    f' не знает, никто не за что не отвечает. Что за народ!' \
+                    f' можно вас попросить сказать им уже город, а то они всё тут разнесут?' \
+                    f' Ну, например, так: \n\n/add Ярославль'
+        else:
+            text = f'Буду напоминать о {", ".join(city_names)} по утрам'
+            if old_without_new_cities:
+                text += '. A ещё о ' + ', '.join(old_without_new_cities)
         
         tg_api_connector.send_message({chat_id}, text, None)
         return success
@@ -163,11 +193,11 @@ def lambda_handler(event: dict, context) -> dict:
     chats_with_params = base.get_chats_with_params()
     
     if event_data.type is EventType.LIST_CITIES:
-        city_names = chats_with_params.get(chat_id, {}).get('cities', [])
-        if not city_names:
+        city_name = chats_with_params.get(chat_id, {}).get('cities', [])
+        if not city_name:
             text = f'Вы просили напоминать о пустом множестве городов! Будет сделано! 🫡'
         else:
-            text = f'Кажется, вы просили напоминать о ' + ', '.join(city_names) + '. Ох, всего-то не упомнишь ...'
+            text = f'Кажется, вы просили напоминать о ' + ', '.join(city_name) + '. Ох, всего-то не упомнишь ...'
         
         tg_api_connector.send_message({chat_id}, text, None)
         return success
@@ -175,8 +205,8 @@ def lambda_handler(event: dict, context) -> dict:
     assert event_data.type in (EventType.CITY, EventType.SHOW_CITIES)
     
     if event_data.type is EventType.CITY:
-        city_names = event_data.city_names
-        if len(city_names) == 1 and city_names[0] == 'city':
+        city_name = event_data.city_name
+        if len(city_name) == 1 and city_name[0] == 'city':
             text = 'Добро пожаловать на метеостанцию. Располагайтесь,' \
                 f' чайку? Унты не ставьте близко к камину, сядут-с ... ' \
                 f' Вы какие сигары предпочитаете, La Gloria Cubana? Romeo y Julieta?' \
@@ -191,9 +221,9 @@ def lambda_handler(event: dict, context) -> dict:
             tg_api_connector.send_message({chat_id}, text, None)
             return success    
     elif event_data.type is EventType.SHOW_CITIES:
-        city_names = chats_with_params.get(chat_id, {}).get('cities', [])
+        city_name = chats_with_params.get(chat_id, {}).get('cities', [])
     
-    if not city_names:
+    if not city_name:
         text = 'Сейчас-сейчас ... бегу ... ой, а ни одного' \
                 f' города-то вы и не заказывали ...'        
         tg_api_connector.send_message({chat_id}, text, None)
@@ -201,96 +231,31 @@ def lambda_handler(event: dict, context) -> dict:
     
     dark_mode = chats_with_params.get(chat_id, {}).get('dark_mode', cfg.DEFAULT_DARKMODE)
     
-    for city_name in city_names:
+    for city_name in city_name:
         text, image = create_message(city_name, dark_mode)
         tg_api_connector.send_message({chat_id}, text, image)
 
     return success
 
 
-
-
-
-
-    
-    # elif event_data.type is EventType.SWITCH_DARKMODE:
-    #     chat_id = event_data.chat_id
-    #     dark_mode = base.switch_darkmode(chat_id)
-    #     text = f'Теперь картинка будет {"тёмная" if dark_mode else "светлая"}'
-    #     tg_api_connector.send_message({chat_id}, text, None)
-    
-    # elif event_data.type is EventType.SCHEDULED:
-    #     # if event_data.chat_id:
-    #     #     chat_id = event_data.chat_id
-    #     #     chats_with_params = base.get_chat_with_params(chat_id)
-    #     #     if not chats_with_params or not chats_with_params[0].get('cities'):
-    #     #         text = 'Сейчас-сейчас ... бегу ... ой, а ни одного' \
-    #     #                 f' города-то вы и не заказывали ...'
-    #     #         tg_api_connector.send_message({chat_id}, text, None)
-    #     # else:
-    #     #     chats_with_params = base.get_chats_with_params()
-        
-    #     for chat_info in chats_with_params:
-    #         chat_id = chat_info['id']
-    #         dark_mode = chat_info.get('dark_mode', False)
-    #         city_names = chat_info.get('cities', [])
-    #         for city_name in city_names:
-    #             text, image = create_message(city_name, dark_mode)
-    #             tg_api_connector.send_message({chat_id}, text, image)
-    
-    # elif event_data.type is EventType.CITY:
-    #     chat_id = event_data.chat_id
-    #     city_name = event_data.city_names[0]
-        
-    #     chats_with_params = base.get_chats_with_params()
-    #     base.add_chat(chat_id)
-        
-    #     dark_mode = cfg.DEFAULT_DARKMODE
-    #     for chat_info in chats_with_params:
-    #         if chat_info['id'] == chat_id:
-    #             dark_mode = chat_info.get('dark_mode', cfg.DEFAULT_DARKMODE)
-    #             break
-        
-    #     text, image = create_message(city_name, dark_mode)
-    #     tg_api_connector.send_message({chat_id}, text, image)
-        
-    # elif event_data.type is EventType.ADD_CITIES:
-    #     chat_id = event_data.chat_id
-    #     city_names = event_data.city_names
-
-    #     old_without_new_cities = base.add_cities(chat_id, city_names)
-    #     text = f'Буду напоминать о {", ".join(city_names)} по утрам'
-    #     if old_without_new_cities:
-    #         text += '. A ещё о ' + ', '.join(old_without_new_cities)
-        
-    #     tg_api_connector.send_message({chat_id}, text, None)
-    # elif event_data.type is EventType.CLEAR_CITIES:
-    #     chat_id = event_data.chat_id
-        
-    #     base.clear_cities(chat_id)
-    #     text = f'Напоминалки обо всех городах удалены'
-    #     tg_api_connector.send_message({chat_id}, text, None)
-        
-    # elif event_data.type is EventType.LIST_CITIES:
-    #     chat_id = event_data.chat_id
-    #     cities = base.list_cities(chat_id)
-    #     if not cities:
-    #         text = f'Вы просили напоминать о пустом множестве городов! Будет сделано! 🫡'
-    #     else:
-    #         text = f'Кажется, вы просили напоминать о ' + ', '.join(cities) + '. Ох, всего-то не упомнишь ...'
-        
-    #     tg_api_connector.send_message({chat_id}, text, None)
-        
-    # else:
-    #     assert False
-
-    # utils.print_with_time(f'sent messages to chats')
-    # return success
+def update_db(event_data: EventData) -> Any:
+    if event_data.type is EventType.SWITCH_DARKMODE:
+        feedback = base.switch_darkmode(event_data.chat_id)
+    elif event_data.type is EventType.CLEAR_CITIES:
+        feedback = base.clear_cities(event_data.chat_id)
+    elif event_data.type is EventType.ADD_CITY:
+        feedback = base.add_cities(event_data.chat_id, [event_data.city_name])
+    # elif event_data.type in (EventType.ADD_CITY, EventType.CITY):
+    #     feedback = base.save_command(event_data)
+    else:
+        assert False
+    return feedback
 
 
 @cache
 def create_message(city_name: str, dark_mode: bool) -> \
         tuple[str, Optional[io.BytesIO]]:
+    
     weather_text = weather_connector.get_weather_text(city_name)
     weather_image = weather_connector.get_weather_image(city_name, dark_mode)
     

@@ -169,9 +169,9 @@ def lambda_handler(event: dict, context) -> dict:
         return success
     
     if event_data.type is EventType.ADD_CITY:
-        city_names = event_data.city_names
+        city_name = event_data.city_name
         old_without_new_cities = db_update_feedback
-        if not city_names or not city_names[0]:
+        if not city_name:
             text = f'Здравствуйте. Кажется, вы нажали команду\n\n/add\n\nв меню.' \
                     f' Вам-то хорошо, нажали и нажали. А наш департамент' \
                     f' на ушах: все хотят знать, какой город вы хотите добавить' \
@@ -181,7 +181,7 @@ def lambda_handler(event: dict, context) -> dict:
                     f' можно вас попросить сказать им уже город, а то они всё тут разнесут?' \
                     f' Ну, например, так: \n\n/add Ярославль'
         else:
-            text = f'Буду напоминать о {", ".join(city_names)} по утрам'
+            text = f'Буду напоминать о {city_name} по утрам'
             if old_without_new_cities:
                 text += '. A ещё о ' + ', '.join(old_without_new_cities)
         
@@ -231,9 +231,8 @@ def lambda_handler(event: dict, context) -> dict:
     
     dark_mode = chats_with_params.get(chat_id, {}).get('dark_mode', cfg.DEFAULT_DARKMODE)
     
-    for city_name in city_name:
-        text, image = create_message(city_name, dark_mode)
-        tg_api_connector.send_message({chat_id}, text, image)
+    text, image = create_message(city_name, dark_mode)
+    tg_api_connector.send_message({chat_id}, text, image)
 
     return success
 
@@ -272,7 +271,14 @@ def create_message(city_name: str, dark_mode: bool) -> \
     return weather_text, weather_image
 
 
+# if __name__ == '__main__':
+#     getUpdates(timeout=30)
+
+
 if __name__ == '__main__':
-    for k, v in tests.__dict__.items():
-        if k.startswith('test_') and isinstance(v, dict):
-            lambda_handler(v, None)
+    for event in tests.events:
+        lambda_handler(event, None)
+
+    # for k, v in tests.__dict__.items():
+    #     if k.startswith('test_') and isinstance(v, dict):
+    #         lambda_handler(v, None)

@@ -9,17 +9,32 @@ test_event_bridge = {
         "detail": {},
     }
 
-commands = [ 
+commands = [
+    '/clear',
+    '/dark',
+    '/list',
+    '/show',
+    '/add Вышний Волочёк',
+    '/add Кобулети',
+    '/New-York',
+    '/add Вышний Волочёк',
+    '/list',
+    '/show',
+    '/мухосранск',
+    # '/add Нарофоминск@kobuleti_weather_bot',
+    # '/ @kobuleti_weather_bot',
     # '/add@kobuleti_weather_bot',
+    # '/@kobuleti_weather_bot',
     # '/dark',
     # '/s',
-    '/k@kobuleti_weather_bot',
-    '/магнитогорск',
-    '/Санкт-Петербург',
-    '/мухосранск',
+    # '/k@kobuleti_weather_bot',
+    # '/магнитогорск',
+    # '/Санкт-Петербург',
+    # '/мухосранск',
 ]
 
-events = [test_event_bridge]
+# events = [test_event_bridge]
+events = []
 
 for command in commands:
 

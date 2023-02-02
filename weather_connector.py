@@ -110,7 +110,7 @@ def get_city_options_from_name(city_name: str) -> Generator[tuple, None, None]:
     
         local_name = citi_info['name']
         iso2 = citi_info['iso2']
-        country = citi_info['counrty']
+        country = citi_info['country']
         admin_subject = citi_info['admin1']
         lat = citi_info['lat']
         lon = citi_info['lon']
@@ -145,9 +145,8 @@ def _get_meteoblue_pic_url(url_suffix_for_sig: str, dark_mode: bool) -> str:
 
 
 def _get_picture_url(city_name: str, dark_mode: bool) -> str:
-    city, iso2, lat, lon, asl, tz, url_suffix_for_sig \
-            = get_city_options_from_name(city_name)
-    
+    gen = get_city_options_from_name(city_name)
+    city = next(gen)
     
     # iso2 = iso2.lower()
     # city = urllib.parse.quote(city.encode('utf-8'), safe='') 
@@ -155,7 +154,7 @@ def _get_picture_url(city_name: str, dark_mode: bool) -> str:
     
     # url = f'&city={city}&iso2={iso2}&lat={lat}&lon={lon}&asl={asl}&tz={tz}'
     
-    picure_url = _get_meteoblue_pic_url(url_suffix_for_sig, dark_mode)
+    picure_url = _get_meteoblue_pic_url(city.url_suffix_for_sig, dark_mode)
     
     return picure_url
 

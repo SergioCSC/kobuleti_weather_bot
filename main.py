@@ -1,5 +1,6 @@
 import config as cfg
 import utils
+from city import City
 import base
 import weather_connector
 import tg_api_connector
@@ -102,11 +103,14 @@ def lambda_handler(event: dict, context) -> dict:
     if event_data.type is EventType.OTHER:
         return success
     elif event_data.type is EventType.SCHEDULED:
-        chats_with_params = base.get_chats_with_params()
-        for chat_id, chat_info in chats_with_params.items():
+        chats = base.get_chats()
+        for chat_id, chat_info in chats.items():
             dark_mode = chat_info.get('dark_mode', cfg.DEFAULT_DARKMODE)
-            city_name = chat_info.get('cities', [])
-            for city_name in city_name:
+            cities = chat_info.get('cities', [])
+            for city in cities:
+                city_name = city.local_name if isinstance(city, City) else city
+                # TODO fix upper line
+                
                 text, image = create_message(city_name, dark_mode)
                 tg_api_connector.send_message({chat_id}, text, image)
         return success
@@ -147,13 +151,32 @@ def lambda_handler(event: dict, context) -> dict:
         
     #     return success
     
-    if event_data.type in (EventType.SWITCH_DARKMODE, EventType.CLEAR_CITIES, EventType.ADD_CITY):
+    right_city = None
+    if event_data.type in (EventType.CITY, EventType.ADD_CITY):
+        if not event_data.city_name:
+            text = f'Здравствуйте. Кажется, вы нажали команду\n\n/add\n\nв меню.' \
+                    f' Вам-то хорошо, нажали и нажали. А наш департамент' \
+                    f' на ушах: все хотят знать, какой город вы хотите добавить' \
+                    f' в напоминалки. Все бегают, шумят, волосы рвут. ' \
+                    f' Ставки делают, морды бьют. И никто ничего' \
+                    f' не знает, никто не за что не отвечает. Что за народ!' \
+                    f' можно вас попросить сказать им уже город, а то они всё тут разнесут?' \
+                    f' Ну, например, так: \n\n/add Ярославль'
+            tg_api_connector.send_message({chat_id}, text, None)
+            return success
+            
+        city_options = list(weather_connector.get_city_options_from_name(event_data.city_name))
+        if city_options:
+            right_city = city_options[0]
+            if event_data.type is EventType.ADD_CITY:
+                db_update_feedback = update_db(event_data, right_city)
+    
+    elif event_data.type in (EventType.SWITCH_DARKMODE, EventType.CLEAR_CITIES):
         db_update_feedback = update_db(event_data)
 
     assert event_data.type in (EventType.ADD_CITY, EventType.CITY, EventType.CLEAR_CITIES, 
             EventType.LIST_CITIES, EventType.SHOW_CITIES, EventType.SWITCH_DARKMODE)
 
-    
     if event_data.type is EventType.SWITCH_DARKMODE:
         dark_mode = db_update_feedback
         text = f'Теперь картинка будет {"тёмная" if dark_mode else "светлая"}'
@@ -169,81 +192,91 @@ def lambda_handler(event: dict, context) -> dict:
         return success
     
     if event_data.type is EventType.ADD_CITY:
-        city_name = event_data.city_name
-        old_without_new_cities = db_update_feedback
-        if not city_name:
-            text = f'Здравствуйте. Кажется, вы нажали команду\n\n/add\n\nв меню.' \
-                    f' Вам-то хорошо, нажали и нажали. А наш департамент' \
-                    f' на ушах: все хотят знать, какой город вы хотите добавить' \
-                    f' в напоминалки. Все бегают, шумят, волосы рвут. ' \
-                    f' Ставки делают, морды бьют. И никто ничего' \
-                    f' не знает, никто не за что не отвечает. Что за народ!' \
-                    f' можно вас попросить сказать им уже город, а то они всё тут разнесут?' \
-                    f' Ну, например, так: \n\n/add Ярославль'
+        if not right_city:
+            text = f'Здравствуйте. Вот ищу я, ищу ... хоть убей, нет ни одного' \
+                    f' {event_data.city_name}. Странно это как-то ...'
         else:
+            city_name = right_city.local_name
+            old_without_new_cities = db_update_feedback
+            old_without_new_cities_names = [c.local_name for c in old_without_new_cities]
             text = f'Буду напоминать о {city_name} по утрам'
             if old_without_new_cities:
-                text += '. A ещё о ' + ', '.join(old_without_new_cities)
+                text += '. A ещё о ' + ', '.join(old_without_new_cities_names)
         
         tg_api_connector.send_message({chat_id}, text, None)
         return success
 
     assert event_data.type in (EventType.LIST_CITIES, EventType.SHOW_CITIES, EventType.CITY)
     
-    chats_with_params = base.get_chats_with_params()
+    chats = base.get_chats()
     
     if event_data.type is EventType.LIST_CITIES:
-        city_name = chats_with_params.get(chat_id, {}).get('cities', [])
-        if not city_name:
-            text = f'Вы просили напоминать о пустом множестве городов! Будет сделано! 🫡'
+        cities = chats.get(chat_id, {}).get('cities', [])
+        if not cities:
+            text = f'Вы просили напоминать о пустом множестве городов!' \
+                    f' Будет сделано! 🫡'
         else:
-            text = f'Кажется, вы просили напоминать о ' + ', '.join(city_name) + '. Ох, всего-то не упомнишь ...'
+            city_names = [city.local_name for city in cities]
+            text = f'Кажется, вы просили напоминать о ' \
+                    + ', '.join(city_names) + '. Ох, всего-то не упомнишь ...'
         
         tg_api_connector.send_message({chat_id}, text, None)
         return success
 
     assert event_data.type in (EventType.CITY, EventType.SHOW_CITIES)
     
+    dark_mode = chats.get(chat_id, {}).get('dark_mode', cfg.DEFAULT_DARKMODE)
+    
     if event_data.type is EventType.CITY:
-        city_name = event_data.city_name
-        if len(city_name) == 1 and city_name[0] == 'city':
+        if not right_city:  # TODO copypaste
+            text = f'Здравствуйте. Вот ищу я, ищу ... хоть убей, нет ни одного' \
+                    f' {event_data.city_name}. Странно это как-то ...'
+            tg_api_connector.send_message({chat_id}, text, None)
+            return success
+        elif right_city.local_name == 'city':
             text = 'Добро пожаловать на метеостанцию. Располагайтесь,' \
                 f' чайку? Унты не ставьте близко к камину, сядут-с ... ' \
                 f' Вы какие сигары предпочитаете, La Gloria Cubana? Romeo y Julieta?' \
                 f' Простите, конечно, перехожу к вашему делу.' \
                 f' Вы точно хотите послать гонцов в город city? Нет, мои парни могут' \
                 f' и не такое, и собаки хорошо отдохнули. Только, вот, не хотите ли,' \
-                f' вместо мифического\n\n/city\n\n, узнать погоду в городе\n\n/Оймякон\n\n' \
-                f'? Или, допустим, в\n\n/Могадишо\n\n? Вы, кстати, были в Могадишо?' \
+                f' вместо мифического\n\n/city\n\n, узнать погоду в городе\n\n/Оймякон?\n\n' \
+                f' Или, допустим, в\n\n/Могадишо\n\n? Вы, кстати, были в Могадишо?' \
                 f' Я вот вам очень советую. Очень, знаете ли, хорошее место, чтобы там' \
                 f' не бывать. Я вот там не был и видите, как мне это понравилось ...' \
                 f' Эх, да ... Вот же ж какого времени не было ... Хорошо.'
             tg_api_connector.send_message({chat_id}, text, None)
-            return success    
+            return success
+        else:
+            text, image = create_message(right_city.local_name, dark_mode)
+            tg_api_connector.send_message({chat_id}, text, image)
+            return success
+    
     elif event_data.type is EventType.SHOW_CITIES:
-        city_name = chats_with_params.get(chat_id, {}).get('cities', [])
-    
-    if not city_name:
-        text = 'Сейчас-сейчас ... бегу ... ой, а ни одного' \
-                f' города-то вы и не заказывали ...'        
-        tg_api_connector.send_message({chat_id}, text, None)
+        cities = chats.get(chat_id, {}).get('cities', [])
+
+        if not cities:
+            text = 'Сейчас-сейчас ... бегу ... ой, а ни одного' \
+                    f' города-то вы и не заказывали ...'
+                    
+            tg_api_connector.send_message({chat_id}, text, None)
+            return success
+
+        for city in cities:
+            text, image = create_message(city.local_name, dark_mode)
+            tg_api_connector.send_message({chat_id}, text, image)
         return success
-    
-    dark_mode = chats_with_params.get(chat_id, {}).get('dark_mode', cfg.DEFAULT_DARKMODE)
-    
-    text, image = create_message(city_name, dark_mode)
-    tg_api_connector.send_message({chat_id}, text, image)
 
-    return success
+    assert False
 
 
-def update_db(event_data: EventData) -> Any:
+def update_db(event_data: EventData, city: City = None) -> Any:
     if event_data.type is EventType.SWITCH_DARKMODE:
         feedback = base.switch_darkmode(event_data.chat_id)
     elif event_data.type is EventType.CLEAR_CITIES:
         feedback = base.clear_cities(event_data.chat_id)
     elif event_data.type is EventType.ADD_CITY:
-        feedback = base.add_cities(event_data.chat_id, [event_data.city_name])
+        feedback = base.add_city(event_data.chat_id, city)
     # elif event_data.type in (EventType.ADD_CITY, EventType.CITY):
     #     feedback = base.save_command(event_data)
     else:
@@ -254,12 +287,12 @@ def update_db(event_data: EventData) -> Any:
 @cache
 def create_message(city_name: str, dark_mode: bool) -> \
         tuple[str, Optional[io.BytesIO]]:
-    
+
     weather_text = weather_connector.get_weather_text(city_name)
     weather_image = weather_connector.get_weather_image(city_name, dark_mode)
-    
+
     not_found_start = f'{city_name}, говорите ... \n\n'
-    
+
     if weather_text == '':
         text_body = random.choice(not_found_weather_texts)
         weather_text = not_found_start + text_body
@@ -267,7 +300,7 @@ def create_message(city_name: str, dark_mode: bool) -> \
     if weather_image is None:
         if not weather_text.startswith(not_found_start):
             weather_text += not_found_weather_image_text
-    
+
     return weather_text, weather_image
 
 

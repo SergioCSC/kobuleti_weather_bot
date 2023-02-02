@@ -17,7 +17,7 @@ OPENWEATHERMAP_GET_WEATHER_FIXED_PARAMS = '&units=metric&lang=ru'
 
 
 METEOBLUE_GEOCODING_PREFIX = 'https://www.meteoblue.com/ru/server/search/query3?'
-METEOBLUE_GEOCODING_FIXED_PARAMS = 'language=ru&iso2=ru&itemsPerPage=10&query='
+METEOBLUE_GEOCODING_FIXED_PARAMS = 'language=ru&itemsPerPage=10&query='
 # METEOBLUE_GET_CITI_INFO_PREFIX = 'https://www.meteoblue.com/en/weather/week/'
 METEOBLUE_GET_CITI_INFO_PREFIX = 'https://www.meteoblue.com/ru/погода/неделя/'
 

@@ -26,36 +26,39 @@ class Weather(NamedTuple):
     long_description: str
 
 
-def get_weather_text(city_name: str) -> str:
+def get_weather_text(city: City) -> str:
     try:
         # utils.print_with_time(f'START got text from openweathermap.org')
-        weather = _http_get_weather(city_name)
+        weather = _http_get_weather(city)
         text = _create_weather_message(weather)
         utils.print_with_time(f'got text from openweathermap.org')
         return text
     except Exception as e:
-        utils.print_with_time(f'Exception {e} in weather_connector.http_get_weather({city_name})')
+        utils.print_with_time(f'Exception {e} in weather_connector.http_get_weather({city.local_name})')
         return ''
 
 
-def get_weather_image(city_name: str, dark_mode: bool) -> Optional[io.BytesIO]:
+def get_weather_image(city: City, dark_mode: bool) -> Optional[io.BytesIO]:
     try:
-        return _get_weather_image(city_name, dark_mode)
+        return _get_weather_image(city, dark_mode)
     except Exception as e:
         utils.print_with_time(f'Exception {e} in'
-                f' weather_connector.get_weather_image({city_name})')
+                f' weather_connector.get_weather_image({city.local_name})')
         return None
 
 
-def _http_get_weather(city_name: str) -> Weather:
-    coordinates, city_ru_name = _get_openweathermap_coordinates_and_name(city_name)
+def _http_get_weather(city: City) -> Weather:
+    coordinates = f'lat={city.lat}&lon={city.lon}'
+    
     weather_url = f'{cfg.OPENWEATHERMAP_GET_WEATHER_PREFIX}' \
             f'?{cfg.OPENWEATHERMAP_GET_WEATHER_FIXED_PARAMS}' \
             f'&{coordinates}' \
             f'&appid={api_keys.OPENWEATHERMAP_ORG_APP_ID}'
     response = requests.get(weather_url)
     message = response.text
+    
     d = json.loads(message)
+    openweathermap_name = d['name']
     temp_celsius = float(d['main']['temp'])  # - 273.15
     pressure_mm_hg = int(float(d['main']['pressure']) * 3 / 4)
     humidity_percent: int = int(d['main']['humidity'])
@@ -63,9 +66,9 @@ def _http_get_weather(city_name: str) -> Weather:
     short_description = d['weather'][0]['main']
     long_description = d['weather'][0]['description']
     
-    # weather_icon = d['weather'][0]['icon']
+    weather_icon = d['weather'][0]['icon']
     
-    return Weather(city_ru_name, 
+    return Weather(openweathermap_name, 
                    temp_celsius, 
                    pressure_mm_hg, 
                    humidity_percent, 
@@ -144,21 +147,6 @@ def _get_meteoblue_pic_url(url_suffix_for_sig: str, dark_mode: bool) -> str:
     return picture_url
 
 
-def _get_picture_url(city_name: str, dark_mode: bool) -> str:
-    gen = get_city_options_from_name(city_name)
-    city = next(gen)
-    
-    # iso2 = iso2.lower()
-    # city = urllib.parse.quote(city.encode('utf-8'), safe='') 
-    # tz = urllib.parse.quote(tz.encode('utf-8'), safe='') 
-    
-    # url = f'&city={city}&iso2={iso2}&lat={lat}&lon={lon}&asl={asl}&tz={tz}'
-    
-    picure_url = _get_meteoblue_pic_url(city.url_suffix_for_sig, dark_mode)
-    
-    return picure_url
-
-
 def _crop_image(image_bytes: io.BytesIO) -> io.BytesIO:
     image = Image.open(image_bytes)
     h_1 = 600
@@ -178,9 +166,10 @@ def _crop_image(image_bytes: io.BytesIO) -> io.BytesIO:
     return cropped_bytes_object
 
 
-def _get_weather_image(city_name: str, dark_mode: bool) -> io.BytesIO:
+def _get_weather_image(city: City, dark_mode: bool) -> io.BytesIO:
     # utils.print_with_time(f'    START getting picture url')
-    picture_url = _get_picture_url(city_name, dark_mode)
+    picture_url = _get_meteoblue_pic_url(city.url_suffix_for_sig, 
+                                         dark_mode)
     utils.print_with_time(f'    got picture url')
     # utils.print_with_time(f'    START getting picture')
     response = requests.get(picture_url)

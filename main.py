@@ -111,7 +111,7 @@ def lambda_handler(event: dict, context) -> dict:
                 city_name = city.local_name if isinstance(city, City) else city
                 # TODO fix upper line
                 
-                text, image = create_message(city_name, dark_mode)
+                text, image = create_message(city, dark_mode)
                 tg_api_connector.send_message({chat_id}, text, image)
         return success
     
@@ -248,7 +248,7 @@ def lambda_handler(event: dict, context) -> dict:
             tg_api_connector.send_message({chat_id}, text, None)
             return success
         else:
-            text, image = create_message(right_city.local_name, dark_mode)
+            text, image = create_message(right_city, dark_mode)
             tg_api_connector.send_message({chat_id}, text, image)
             return success
     
@@ -263,7 +263,7 @@ def lambda_handler(event: dict, context) -> dict:
             return success
 
         for city in cities:
-            text, image = create_message(city.local_name, dark_mode)
+            text, image = create_message(city, dark_mode)
             tg_api_connector.send_message({chat_id}, text, image)
         return success
 
@@ -285,13 +285,13 @@ def update_db(event_data: EventData, city: City = None) -> Any:
 
 
 @cache
-def create_message(city_name: str, dark_mode: bool) -> \
+def create_message(city: City, dark_mode: bool) -> \
         tuple[str, Optional[io.BytesIO]]:
 
-    weather_text = weather_connector.get_weather_text(city_name)
-    weather_image = weather_connector.get_weather_image(city_name, dark_mode)
+    weather_text = weather_connector.get_weather_text(city)
+    weather_image = weather_connector.get_weather_image(city, dark_mode)
 
-    not_found_start = f'{city_name}, говорите ... \n\n'
+    not_found_start = f'{city.local_name}, говорите ... \n\n'
 
     if weather_text == '':
         text_body = random.choice(not_found_weather_texts)

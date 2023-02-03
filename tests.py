@@ -9,18 +9,37 @@ test_event_bridge = {
         "detail": {},
     }
 
+chat_id = 534111842
 commands = [
-    '/clear',
-    '/dark',
-    '/list',
-    '/show',
-    '/add Вышний Волочёк',
-    '/add Кобулети',
-    '/New-York',
-    '/add Вышний Волочёк',
-    '/list',
-    '/show',
-    '/мухосранск',
+    '/сосновка',
+    '/5',
+    # '/add Кобулети',
+    # '/1',
+    # '/мухосранск',
+    # '/add мухосранск',
+    # '/0',
+    # '/clear',
+    # '/dark',
+    # '/list',
+    # '/show',
+    # '/воркута',
+    # '/1',
+    # '/add Вышний Волочёк',
+    # '/1',
+    # '/снежинск',
+    # '/1',
+    # '/2',
+    # '/list',
+    # '/add Кобулети',
+    # '/New-York',
+    # '/add Вышний Волочёк',
+    # '/add буй',
+    # '/add сибирка',
+    # '/add мариинск',
+    # '/add павлово',
+    # '/list',
+    # '/show',
+    # '/мухосранск',
     # '/add Нарофоминск@kobuleti_weather_bot',
     # '/ @kobuleti_weather_bot',
     # '/add@kobuleti_weather_bot',
@@ -38,7 +57,8 @@ events = []
 
 for command in commands:
 
-    body_start = '{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":534111842,\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"'
+    body_start = '{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":'
+    body_middle = ',\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"'
     body_finish = '\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}'
 
     event = {
@@ -101,7 +121,7 @@ for command in commands:
         },
         "pathParameters": "None",
         "stageVariables": "None",
-        "body": f'{body_start}{command}{body_finish}',
+        "body": f'{body_start}{chat_id}{body_middle}{command}{body_finish}',
         "isBase64Encoded": "False"
     }
     events.append(event)

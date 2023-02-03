@@ -4,13 +4,26 @@ import api_keys
 
 import requests
 import io
-import sys
+import json
 import urllib
 from urllib.error import HTTPError
 from typing import Optional
 
 
-def send_message(chat_set: set[int], message: str, image: Optional[io.BytesIO]) -> None:
+REPLY_KEYBOARD = [[str(i) for i in range(1, 6)],
+                  [str(i) for i in range(6, 11)],
+                ]
+REPLY_MARKUP = {"keyboard": REPLY_KEYBOARD, 
+                "one_time_keyboard": True,
+                "resize_keyboard": True,
+                }
+REPLY_MARKUP_STR = json.dumps(REPLY_MARKUP)
+
+
+def send_message(chat_set: set[int], message: str, 
+                 image: Optional[io.BytesIO],
+                 use_reply_keyboard: bool = False
+                 ) -> None:
     message = message.replace('!', '\!')
     message = urllib.parse.quote(message.encode('utf-8'))
     message = message.replace('-', '\-')
@@ -25,6 +38,7 @@ def send_message(chat_set: set[int], message: str, image: Optional[io.BytesIO]) 
             f'&parse_mode=MarkdownV2'
             f'&chat_id={chat_id}'
             f'&{"caption" if image else "text"}={message}'
+            f'{"&reply_markup=" + REPLY_MARKUP_STR if use_reply_keyboard else ""}'
         )
         if image:
             image.seek(0)

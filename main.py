@@ -141,7 +141,8 @@ def lambda_handler(event: dict, context) -> dict:
         
         if len(city_options) > 1:    
             text = create_choice_message(city_options)
-            tg_api_connector.send_message({chat_id}, text, None)
+            tg_api_connector.send_message({chat_id}, text, None,
+                    use_reply_keyboard=True)
             return success
         
         else:
@@ -274,10 +275,6 @@ def create_choice_message(city_options: list[City]) -> str:
     for i, city in enumerate(city_options):
         city_description = create_city_description(city)
         text += f'{i + 1}. {city_description}\n\n'
-    text += 'и отправьте команду' \
-            f' с его поряковым номером,' \
-            f' например: \n\n/1\n\n'
-
     return text
 
 @cache

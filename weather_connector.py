@@ -74,7 +74,7 @@ def _http_get_weather(city: City) -> Weather:
     
     weather_icon = d['weather'][0]['icon']
     
-    return Weather(owm_name, 
+    return Weather(city.local_name,  # owm_name, 
                    owm_lat,
                    owm_lon,
                    temp_celsius, 

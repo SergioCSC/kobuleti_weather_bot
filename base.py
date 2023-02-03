@@ -1,5 +1,6 @@
 import config as cfg
 from city import City
+from event import EventData, EventType
 import utils
 
 import boto3
@@ -53,19 +54,7 @@ def get_chats() -> dict[int, dict[str, Any]]:
 
 def _get_chat(chat_id: int) -> dict[str, Any]:
     chats_with_params = get_chats()
-    return chats_with_params[chat_id]
-    # try:
-    #     response = TABLE.get_item(Key={'id': chat_id})
-    # except ClientError as err:
-    #     utils.print_with_time(
-    #         "Couldn't get chat %s from table %s. Here's why: %s: %s",
-    #         chat_id, TABLE.name,
-    #         err.response['Error']['Code'], err.response['Error']['Message'])
-    #     raise
-    # else:
-    #     item = response.get('Item', {})
-    #     _item_decimals_to_cities(item)
-    #     return item
+    return chats_with_params.get(chat_id, {'id': chat_id})
 
 
 def _put_chat(chat: dict) -> None:
@@ -73,39 +62,64 @@ def _put_chat(chat: dict) -> None:
     TABLE.put_item(Item=chat)
 
 
-def add_chat(chat_id: int) -> None:
-    chat = _get_chat(chat_id)
+# def add_chat(chat_id: int) -> None:
+#     chat = _get_chat(chat_id)
     
-    if not chat:
-        chat = {'id': chat_id}  # TODO Кобулети
-        _put_chat(chat)
+#     if not chat:
+#         chat = {'id': chat_id}  # TODO Кобулети
+#         _put_chat(chat)
     
-    utils.print_with_time(f'Chat {chat_id} added into the table')
+#     utils.print_with_time(f'Chat {chat_id} added into the table')
 
     
 def add_city(chat_id: int, new_city: City) -> list[str]:
     chat = _get_chat(chat_id)
 
-    if not chat:
-        chat = {'id': chat_id, 'cities': [new_city]}
+    old_cities = chat.get('cities', [])
+    if new_city not in old_cities:
+        chat['cities'] = old_cities + [new_city]
         _put_chat(chat)
-        utils.print_with_time(f'City {new_city} added to {chat_id} in the table')
-        return []
-    else:
-        old_cities = chat.get('cities', [])
-        if new_city not in old_cities:
-            chat['cities'] = old_cities + [new_city]
-            _put_chat(chat)
-            
-        utils.print_with_time(f'City {new_city} added to {chat_id} in the table')
-        old_without_new_cities = [c for c in old_cities if c != new_city]
-        return old_without_new_cities
+        
+    utils.print_with_time(f'City {new_city} added to {chat_id} in the table')
+    old_without_new_cities = [c for c in old_cities if c != new_city]
+    return old_without_new_cities
+    
+    
+def save_command(event_data: EventData, 
+                 city_options: list[City]) -> None:
+    
+    chat_id = event_data.chat_id
+    city_name = event_data.city_name
+    command = event_data.type
+    
+    chat = _get_chat(chat_id)
 
+    chat['last_command'] = str(command).split('.')[1]
+    chat['last_command_city_name'] = city_name
+    chat['last_command_city_options'] = city_options
+    _put_chat(chat)
+    utils.print_with_time(f'Command {command} from {chat_id} saved into the table')
+    return
+
+
+def load_command(chat_id: int) -> tuple[EventType, str, list[City]]:
+    chat = _get_chat(chat_id)
+
+    command_str = chat.get('last_command', '')
+    command = EventType[command_str] if command_str else None
+    city_name = chat.get('last_command_city_name', '')
+    city_options = chat.get('last_command_city_options', [])
+    
+    del chat['last_command']
+    del chat['last_command_city_options']
+    
+    _put_chat(chat)
+    utils.print_with_time(f'Command {command} from {chat_id} loaded from the table')
+    return  command, city_name, city_options
+    
     
 def clear_cities(chat_id: int) -> None:
     chat = _get_chat(chat_id)
-    if not chat:
-        return
     chat['cities'] = []
     _put_chat(chat)
     utils.print_with_time(f'All cities cleared for {chat_id} in the table')
@@ -132,23 +146,24 @@ def switch_darkmode(chat_id: int) -> bool:
 
 def _decimal_to_city(decimal_city) -> City:
     return City(
-        decimal_city[0],
-        decimal_city[1],
-        decimal_city[2],
-        decimal_city[3],
-        float(decimal_city[4]),
-        float(decimal_city[5]),
-        int(decimal_city[6]),
-        int(decimal_city[7]),
-        float(decimal_city[8]),
-        decimal_city[9],
-        decimal_city[10],    
+        decimal_city[0],  # local_name
+        decimal_city[1],  # iso2
+        decimal_city[2],  # country
+        decimal_city[3],  # admin_subject
+        float(decimal_city[4]),  # lat
+        float(decimal_city[5]),  # lon
+        int(decimal_city[6]),  # asl
+        int(decimal_city[7]),  # population
+        float(decimal_city[8]),  # distance
+        decimal_city[9],  # tz
+        decimal_city[10],  # url_suffix_for_sig
     )
 
 
 def _chat_decimals_to_cities(chat: dict[str, Any]) -> None:
-    if 'cities' in chat:
-        chat['cities'] = [_decimal_to_city(d) for d in chat['cities']]
+    for key in ('cities', 'last_command_city_options'):
+        if key in chat:
+            chat[key] = [_decimal_to_city(d) for d in chat[key]]
 
 
 def _city_to_decimal(city: City) -> tuple:
@@ -169,8 +184,10 @@ def _city_to_decimal(city: City) -> tuple:
 
 def _chat_cities_to_decimals(chat: dict) -> None:
     # item = json.loads(json.dumps(item), parse_float=Decimal)
-    if 'cities' in chat:
-        chat['cities'] = [_city_to_decimal(c) for c in chat['cities']]
+    for key in ('cities', 'last_command_city_options'):
+        if key in chat:
+            chat[key] = [_city_to_decimal(c) for c in chat[key]]
+    
 
 
 def _init_table() -> 'boto3.resources.factory.dynamodb.Table':

@@ -18,6 +18,8 @@ from typing import Generator
 
 class Weather(NamedTuple):
     city_name: str
+    lat: float
+    lon: float
     temp_celsius: float
     pressure_mm_hg: int
     humidity_percent: int
@@ -30,7 +32,7 @@ def get_weather_text(city: City) -> str:
     try:
         # utils.print_with_time(f'START got text from openweathermap.org')
         weather = _http_get_weather(city)
-        text = _create_weather_message(weather)
+        text = _create_weather_text(city, weather)
         utils.print_with_time(f'got text from openweathermap.org')
         return text
     except Exception as e:
@@ -58,7 +60,11 @@ def _http_get_weather(city: City) -> Weather:
     message = response.text
     
     d = json.loads(message)
-    openweathermap_name = d['name']
+    
+    owm_name = d['name']
+    owm_lat = d['coord']['lat']
+    owm_lon = d['coord']['lon']
+    
     temp_celsius = float(d['main']['temp'])  # - 273.15
     pressure_mm_hg = int(float(d['main']['pressure']) * 3 / 4)
     humidity_percent: int = int(d['main']['humidity'])
@@ -68,7 +74,9 @@ def _http_get_weather(city: City) -> Weather:
     
     weather_icon = d['weather'][0]['icon']
     
-    return Weather(openweathermap_name, 
+    return Weather(owm_name, 
+                   owm_lat,
+                   owm_lon,
                    temp_celsius, 
                    pressure_mm_hg, 
                    humidity_percent, 
@@ -78,7 +86,7 @@ def _http_get_weather(city: City) -> Weather:
                   )
 
     
-def _create_weather_message(w: Weather) -> str:
+def _create_weather_text(city: City, w: Weather) -> str:
     weather_icon = ''
     if w.short_description == 'Clear':
         weather_icon = '🌞 '
@@ -91,15 +99,23 @@ def _create_weather_message(w: Weather) -> str:
     else: 
         weather_icon = w.short_description + ' '
 
-    message = (
-        f'🏖 *{w.city_name}*\n'
+    city_text = \
+            f'🏖 *{w.city_name}*' \
+            f' {city.admin_subject},' \
+            f' {city.country}.' \
+            f' {city.population:,} чел,' \
+            f' {city.asl}м н.у.м.' \
+            f' {w.lat:.2f},'\
+            f' {w.lon:.2f}'\
+            
+    weather_text = (
         f'🌡 {w.temp_celsius:.0f} °C, {weather_icon}{w.long_description}\n'
         f'💨 ветер {w.wind_speed_ms:.0f} м/с\n'
         f'🚰 влажность {w.humidity_percent}%\n'
         f'🎈 давление {w.pressure_mm_hg} мм рт. ст.'
     )
-    
-    return message
+
+    return city_text + '\n\n' + weather_text
 
 
 def get_city_options_from_name(city_name: str) -> Generator[tuple, None, None]:

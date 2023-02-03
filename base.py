@@ -110,8 +110,9 @@ def load_command(chat_id: int) -> tuple[EventType, str, list[City]]:
     city_name = chat.get('last_command_city_name', '')
     city_options = chat.get('last_command_city_options', [])
     
-    del chat['last_command']
-    del chat['last_command_city_options']
+    chat.pop('last_command', None)
+    chat.pop('last_command_city_name', None)
+    chat.pop('last_command_city_options', None)
     
     _put_chat(chat)
     utils.print_with_time(f'Command {command} from {chat_id} loaded from the table')

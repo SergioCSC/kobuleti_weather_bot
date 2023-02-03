@@ -101,12 +101,12 @@ def _create_weather_text(city: City, w: Weather) -> str:
 
     city_text = \
             f'🏖 *{w.city_name}*' \
-            f' {city.admin_subject},' \
+            f' _{city.admin_subject},' \
             f' {city.country}.' \
             f' {city.population:,} чел,' \
             f' {city.asl}м н.у.м.' \
             f' {w.lat:.2f},'\
-            f' {w.lon:.2f}'\
+            f' {w.lon:.2f}_'\
             
     weather_text = (
         f'🌡 {w.temp_celsius:.0f} °C, {weather_icon}{w.long_description}\n'

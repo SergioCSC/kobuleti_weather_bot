@@ -60,6 +60,7 @@ def parse_event(event) -> EventData:
             
             if text.startswith('/add'):
                 city_name = text[len('/add'):].strip()
+                city_name = city_name.replace(' ', '_')  # TODO copypaste
                 return EventData(EventType.ADD_CITY, chat_id, city_name, None)
 
             if text.startswith('/') and text[1:].strip().isdigit():
@@ -68,6 +69,7 @@ def parse_event(event) -> EventData:
 
             if text.startswith('/') and len(text) > 2:  # city command
                 city_name = text[1:].strip()
+                city_name = city_name.replace(' ', '_')  # TODO copypaste
                 if len(city_name) > 1:
                     return EventData(EventType.CITY, chat_id, city_name, None)
             
@@ -116,8 +118,8 @@ def lambda_handler(event: dict, context) -> dict:
                 f' чайку? Унты не ставьте близко к камину, сядут-с ... ' \
                 f' Вы какие сигары предпочитаете, La Gloria Cubana? Romeo y Julieta?' \
                 f' Простите, конечно, перехожу к вашему делу.' \
-                f' Вы точно хотите послать гонцов в город city? Нет, мои парни могут' \
-                f' и не такое, и собаки хорошо отдохнули. Только, вот, не хотите ли,' \
+                f' Вы точно хотите послать гонцов в город city? Да, мои парни, конечно,' \
+                f' могут и не такое, и собаки хорошо отдохнули. Только, вот, не хотите ли,' \
                 f' вместо мифического\n\n/city\n\n, узнать погоду в городе\n\n/Оймякон?\n\n' \
                 f' Или, допустим, в\n\n/Могадишо\n\n? Вы, кстати, были в Могадишо?' \
                 f' Я вот вам очень советую. Очень, знаете ли, хорошее место, чтобы там' \

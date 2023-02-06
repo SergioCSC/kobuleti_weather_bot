@@ -89,7 +89,7 @@ def save_command(event_data: EventData,
                  city_options: list[City]) -> None:
     
     chat_id = event_data.chat_id
-    city_name = event_data.city_name
+    city_name = event_data.info
     command = event_data.type
     
     chat = _get_chat(chat_id)
@@ -116,7 +116,7 @@ def load_command(chat_id: int) -> tuple[EventType, str, list[City]]:
     
     _put_chat(chat)
     utils.print_with_time(f'Command {command} from {chat_id} loaded from the table')
-    return  command, city_name, city_options
+    return  command, city_options
     
     
 def clear_cities(chat_id: int) -> None:

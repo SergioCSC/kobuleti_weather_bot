@@ -99,14 +99,20 @@ def _create_weather_text(city: City, w: Weather) -> str:
     else: 
         weather_icon = w.short_description + ' '
 
+    if w.long_description == 'облачно с прояснениями':
+        weather_icon = '⛅ '
+
+    # country = city.country if city.country != 'Россия' else 'РФ'
+
     city_text = \
-            f'🏖 *{w.city_name}*' \
+            f'🏘 *{w.city_name}*' \
             f' _{city.admin_subject},' \
-            f' {city.country}.' \
-            f' {city.population:,} чел,' \
-            f' {city.asl}м н.у.м.' \
-            f' {w.lat:.2f},'\
-            f' {w.lon:.2f}_'\
+            f' {city.country}' \
+            f'_'
+            # f' {city.population:,} чел,' \
+            # f' {city.asl}м н.у.м.' \
+            # f' {w.lat:.2f},'\
+            # f' {w.lon:.2f}'\
             
     weather_text = (
         f'🌡 {w.temp_celsius:.0f} °C, {weather_icon}{w.long_description}\n'
@@ -118,8 +124,21 @@ def _create_weather_text(city: City, w: Weather) -> str:
     return city_text + '\n\n' + weather_text
 
 
-def get_city_options_from_name(city_name: str) -> Generator[tuple, None, None]:
-    url = cfg.METEOBLUE_GEOCODING_PREFIX + cfg.METEOBLUE_GEOCODING_FIXED_PARAMS + city_name
+def get_city_options(
+        city_name: Optional[str]=None, 
+        lat: Optional[float]=None, 
+        lon: Optional[float]=None) \
+        -> Generator[tuple, None, None]:
+    
+    if city_name:
+        url = cfg.METEOBLUE_GEOCODING_PREFIX \
+                + cfg.METEOBLUE_GEOCODING_FIXED_PARAMS \
+                + city_name
+    else:
+        url = cfg.METEOBLUE_GEOCODING_PREFIX \
+                + cfg.METEOBLUE_GEOCODING_FIXED_PARAMS \
+                + f'{lat} {lon}'
+
     cookies = {'locale': 'ru_RU'}
     response = requests.get(url, cookies=cookies)
     message = response.text

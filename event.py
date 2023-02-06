@@ -2,6 +2,10 @@ from enum import Enum, auto
 from typing import NamedTuple, Optional
 
 class EventType(Enum):
+    START = auto()
+    HERE = auto()
+    ADD_CRON_TRIGGER = auto()
+    USER_LOCATION = auto()
     SCHEDULED = auto()
     CITY = auto()
     ADD_CITY = auto()
@@ -16,5 +20,5 @@ class EventType(Enum):
 class EventData(NamedTuple):
     type: EventType
     chat_id: Optional[int]
-    city_name: str
-    city_num: Optional[int]
+    info: str
+    # city_num: Optional[int]

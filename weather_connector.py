@@ -2,7 +2,7 @@ import config as cfg
 import utils
 import api_keys
 import my_exceptions
-from not_found_messages import not_found_weather_texts
+from messages import NOT_FOUND_WEATHER_TEXTS
 from city import City
 
 from PIL import Image

@@ -10,9 +10,13 @@ test_event_bridge = {
     }
 
 chat_id = 534111842
+# chat_id = -1001899507998  # test group for bots
 commands = [
-    '/сосновка',
-    '/5',
+    # 'Here',
+    '/start',
+    # '/сосновка',
+    # '/5',
+    # '/спб',
     # '/add Кобулети',
     # '/1',
     # '/мухосранск',
@@ -55,12 +59,16 @@ commands = [
 # events = [test_event_bridge]
 events = []
 
+# location_body = '{\"update_id\": \"124258214\", \"message\": {\"message_id\": \"2054\", \"from\": {\"id\": \"534111842\", \"is_bot\": \"False\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"language_code\": \"en\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482937\", \"reply_to_message\": {\"message_id\": \"2052\", \"from\": {\"id\": \"5887622494\", \"is_bot\": \"True\", \"first_name\": \"kobuleti_weather\", \"username\": \"kobuleti_weather_bot\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482838\", \"text\": \"Можете нажать на кнопочку Погода прямо тут, если хотите посмотреть погоду там, где вы находитесь\"}, \"location\": {\"latitude\": \"41.813107\", \"longitude\": \"41.782663\"}}}'
+
 for command in commands:
 
     body_start = '{\"update_id\":124257435,\n\"message\":{\"message_id\":439,\"from\":{\"id\":534111842,\"is_bot\":false,\"first_name\":\"Sergio\",\"username\":\"n_log_n\",\"language_code\":\"en\"},\"chat\":{\"id\":'
     body_middle = ',\"title\":\"Test Group for bots\",\"type\":\"supergroup\"},\"date\":1674068886,\"text\":\"'
     body_finish = '\",\"entities\":[{\"offset\":0,\"length\":2,\"type\":\"bot_command\"}]}}'
 
+    body = f'{body_start}{chat_id}{body_middle}{command}{body_finish}'
+    # body = location_body
     event = {
         "version": "1.0",
         "resource": "/kobuleti_weather",
@@ -121,7 +129,7 @@ for command in commands:
         },
         "pathParameters": "None",
         "stageVariables": "None",
-        "body": f'{body_start}{chat_id}{body_middle}{command}{body_finish}',
+        "body": body,
         "isBase64Encoded": "False"
     }
     events.append(event)

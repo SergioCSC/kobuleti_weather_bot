@@ -5,8 +5,7 @@ import base
 import weather_connector
 import tg_api_connector
 from event import EventType, EventData
-from not_found_messages import not_found_weather_texts
-from not_found_messages import not_found_weather_image_text
+import messages
 
 import io
 import json
@@ -118,54 +117,25 @@ def lambda_handler(event: dict, context) -> dict:
         return success
     
     # if event_data.type is EventType.ADD_CRON_TRIGGER:
-    #     time_str = event_data.city_name
-        
-        
-    #     import boto3
-
-    #     client = boto3.client('events')
-
-    #     response = client.put_rule(
-    #         Name='MyCronRule_9000',
-    #         ScheduleExpression='cron(0 12 * * ? *)',
-    #         State='DISABLED'  # ='ENABLED'
-    #     )
-
-    #     rule_arn = response['RuleArn']
-
-    #     client.put_targets(
-    #         Rule='MyCronRule_9000',
-    #         Targets=[
-    #             {
-    #                 'Id': 'MyLambdaFunction',
-    #                 'Arn': rule_arn
-    #             },
-    #         ]
-    #     )
-
-
-
-
-
-        
-        
     
     chat_id = event_data.chat_id
     
     if event_data.type is EventType.START:
         text = f'Здравствуйте! Бот показывает погоду в выбранном месте в данный момент (текстом) и прогнозом на несколько дней (картинкой).' \
-                f' По кнопке Menu слева внизу есть список команд бота. Мирного неба над головой!'
+                f' По кнопке Меню слева внизу есть список команд бота'
         tg_api_connector.send_message({chat_id}, text, None)
         return success
     
     if event_data.type is EventType.HERE:
-        text = 'Можете нажать на кнопочку "Погода прямо тут",' \
+        text = f'Можете нажать на кнопочку' \
+                f' "{messages.BUTTON_WEATHER_HERE_TEXT}",' \
                 f' если хотите посмотреть погоду там, где вы находитесь'
         tg_api_connector.send_message({chat_id}, text, None,
                                       want_user_location=True)
         return success
     
     chosen_city = None
+    command_type = None
     if event_data.type is EventType.USER_LOCATION:
         location_str = event_data.info
         lat, lon = [float(x) for x in location_str.split(',')]
@@ -179,51 +149,17 @@ def lambda_handler(event: dict, context) -> dict:
             return success
         
         chosen_city = city_options[0]
-        # !!! TODO !!! fix upper string
-        # city_name = chosen_city.local_name
-        # event_data = EventData(EventType.USER_LOCATION, 
-        #                        chat_id, 
-        #                        city_name, 
-        #                        None)
-        # db_update_feedback = update_db(event_data, city_options)
-        
-        # if len(city_options) > 1:    
-        #     text = create_choice_message(city_options)
-        #     tg_api_connector.send_message({chat_id}, text, None,
-        #             use_reply_keyboard=True)
-        #     return success
-        
-        # else:
-        event_data = EventData(EventType.CHOOSE_CITY, 
-                                None, 
-                                '',
-                                None)
+        command_type = event_data.type
+        event_data = EventData(EventType.CHOOSE_CITY, chat_id, '')
     
     elif event_data.type in (EventType.CITY, EventType.ADD_CITY):
         if not event_data.info:
-            text = f'Здравствуйте. Кажется, вы нажали команду\n\n/add\n\nв меню.' \
-                    f' Вам-то хорошо, нажали и нажали. А наш департамент' \
-                    f' на ушах: все хотят знать, какой город вы хотите добавить' \
-                    f' в напоминалки. Все бегают, шумят, волосы рвут. ' \
-                    f' Ставки делают, морды бьют. И никто ничего' \
-                    f' не знает, никто не за что не отвечает. Что за народ!' \
-                    f' можно вас попросить сказать им уже город, а то они всё тут разнесут?' \
-                    f' Ну, например, так: \n\n/add Ярославль'
+            text = messages.EMPTY_ADD_TEXT
             tg_api_connector.send_message({chat_id}, text, None)
             return success
         
         elif event_data.info == 'city':
-            text = 'Добро пожаловать на метеостанцию. Располагайтесь,' \
-                f' чайку? Унты не ставьте близко к камину, сядут-с ... ' \
-                f' Вы какие сигары предпочитаете, La Gloria Cubana? Romeo y Julieta?' \
-                f' Простите, конечно, перехожу к вашему делу.' \
-                f' Вы точно хотите послать гонцов в город city? Да, мои парни, конечно,' \
-                f' могут и не такое, и собаки хорошо отдохнули. Только, вот, не хотите ли,' \
-                f' вместо мифического\n\n/city\n\n, узнать погоду в городе\n\n/Оймякон?\n\n' \
-                f' Или, допустим, в\n\n/Могадишо\n\n? Вы, кстати, были в Могадишо?' \
-                f' Я вот вам очень советую. Очень, знаете ли, хорошее место, чтобы там' \
-                f' не бывать. Я вот там не был и видите, как мне это понравилось ...' \
-                f' Эх, да ... Вот же ж какого времени не было ... Хорошо.'
+            text = messages.CITY_CITY_TEXT
             tg_api_connector.send_message({chat_id}, text, None)
             return success
         
@@ -235,24 +171,21 @@ def lambda_handler(event: dict, context) -> dict:
             
             tg_api_connector.send_message({chat_id}, text, None)
             return success
-        
-        db_update_feedback = update_db(event_data, city_options)
-        
-        if len(city_options) > 1:    
+
+        if len(city_options) > 1:
+            db_update_feedback = update_db(event_data, city_options)
             text = create_choice_message(city_options)
             tg_api_connector.send_message({chat_id}, text, None,
                     use_reply_keyboard=True)
             return success
         
         else:
-            event_data = EventData(EventType.CHOOSE_CITY, 
-                                   event_data.chat_id, 
-                                   str(0))
+            chosen_city = city_options[0]
+            command_type = event_data.type
+            event_data = EventData(EventType.CHOOSE_CITY, chat_id, '')
     
     if event_data.type is EventType.CHOOSE_CITY:
-        if chosen_city:
-            command_type = EventType.USER_LOCATION
-        else:
+        if not chosen_city:
             city_num = int(event_data.info)
             command_type, city_options = base.load_command(chat_id)
             chosen_city = city_options[city_num] if 0 <= city_num < len(city_options) else None
@@ -266,14 +199,13 @@ def lambda_handler(event: dict, context) -> dict:
             
             tg_api_connector.send_message({chat_id}, text, None)
             return success
-        
+
         if command_type in (EventType.CITY, EventType.USER_LOCATION):  
             chats = base.get_chats()
             dark_mode = chats.get(chat_id, {}).get('dark_mode', cfg.DEFAULT_DARKMODE)  
             text, image = create_message(chosen_city, dark_mode)
             tg_api_connector.send_message({chat_id}, text, image)
 
-            
         elif command_type is EventType.ADD_CITY:        
             db_update_feedback = update_db(event_data, [chosen_city])
 
@@ -293,7 +225,7 @@ def lambda_handler(event: dict, context) -> dict:
             tg_api_connector.send_message({chat_id}, None, None, location_str=location_str)
 
         return success
-        
+    
     
     elif event_data.type in (EventType.SWITCH_DARKMODE, EventType.CLEAR_CITIES):
         db_update_feedback = update_db(event_data)
@@ -327,7 +259,7 @@ def lambda_handler(event: dict, context) -> dict:
         else:
             city_descriptions = [create_city_description(c) for c in cities]
             text = f'Кажется, вы просили напоминать о:\n\n' \
-                    + ' ;\n\n'.join(city_descriptions) \
+                    + ' \n\n'.join(city_descriptions) \
                     + '\n\nОх, всего-то не упомнишь ...'
         
         tg_api_connector.send_message({chat_id}, text, None)
@@ -376,8 +308,8 @@ def create_city_description(city: City) -> str:
            f'{" {:,} чел,".format(p) if p else ""}' \
            f' {city.asl}м н.у.м.' \
            f' {city.lat:.2f},'\
-           f' {city.lon:.2f}'\
-                
+           f' {city.lon:.2f}'
+
 
 def create_choice_message(city_options: list[City]) -> str:
     text = f'Пожалуйста, выберите город:\n\n'
@@ -397,12 +329,12 @@ def create_message(city: City, dark_mode: bool) -> \
     not_found_start = f'{city.local_name}, говорите ... \n\n'
 
     if weather_text == '':
-        text_body = random.choice(not_found_weather_texts)
+        text_body = random.choice(messages.NOT_FOUND_WEATHER_TEXTS)
         weather_text = not_found_start + text_body
 
     if weather_image is None:
         if not weather_text.startswith(not_found_start):
-            weather_text += not_found_weather_image_text
+            weather_text += messages.NOT_FOUND_WEATHER_IMAGE_TEXT
 
     return weather_text, weather_image
 

@@ -43,13 +43,15 @@ def send_message(chat_set: set[int], message: str,
                  ) -> None:
     
     if message:
-        message = message.replace('!', '\!')
-        message = message.replace('=', '\=')
-        message = message.replace('(', '\(')
-        message = message.replace(')', '\)')
+        for c in '!=()#-.':
+            message = message.replace(c, '\\' + c)
+        # message = message.replace('=', '\=')
+        # message = message.replace('(', '\(')
+        # message = message.replace(')', '\)')
+        # message = message.replace('#', '\#')
+        # message = message.replace('-', '\-')
+        # message = message.replace('.', '\.')
         message = urllib.parse.quote(message.encode('utf-8'))
-        message = message.replace('-', '\-')
-        message = message.replace('.', '\.')
     
     for chat_id in chat_set:
         if location_str:

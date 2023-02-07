@@ -23,6 +23,8 @@ METEOBLUE_GET_CITI_INFO_PREFIX = 'https://www.meteoblue.com/ru/погода/не
 
 METEOBLUE_PICTURE_URL_PREFIX = 'https://my.meteoblue.com/visimage/meteogram_web_hd' # '?look='
 
+METEOBLUE_COOKIES = {'temp':'CELSIUS', 'locale': 'ru_RU', 'speed': 'METER_PER_SECOND'}
+
 TELEGRAM_URL_PREFIX = 'https://api.telegram.org/bot'
 
 BOT_NAME = 'kobuleti_weather_bot'

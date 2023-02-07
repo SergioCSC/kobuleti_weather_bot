@@ -139,7 +139,7 @@ def get_city_options(
                 + cfg.METEOBLUE_GEOCODING_FIXED_PARAMS \
                 + f'{lat} {lon}'
 
-    cookies = {'locale': 'ru_RU'}
+    cookies = cfg.METEOBLUE_COOKIES
     response = requests.get(url, cookies=cookies)
     message = response.text
     d = json.loads(message)
@@ -166,8 +166,8 @@ def get_city_options(
 def _get_meteoblue_pic_url(url_suffix_for_sig: str, dark_mode: bool) -> str:
     url = cfg.METEOBLUE_GET_CITI_INFO_PREFIX + url_suffix_for_sig
     dark_mode = str(dark_mode).lower()
-    cookies = {'temp':'CELSIUS', 'darkmode': dark_mode,
-               'locale': 'ru_RU', 'speed': 'METER_PER_SECOND'}
+    cookies = cfg.METEOBLUE_COOKIES
+    cookies['darkmode'] = dark_mode
     response = requests.get(url, cookies=cookies)
     body = response.text
     

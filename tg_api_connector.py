@@ -20,24 +20,13 @@ USER_LOCATION_MARKUP = {"keyboard": USER_LOCATION_KEYBOARD,
                         }
 USER_LOCATION_STR = json.dumps(USER_LOCATION_MARKUP)
 
-
-
-REPLY_KEYBOARD = [[str(i) for i in range(1, 6)],
-                  [str(i) for i in range(6, 11)]]
-REPLY_MARKUP = {"keyboard": REPLY_KEYBOARD, 
-                "one_time_keyboard": True,
-                # "is_persistent": False,
-                "resize_keyboard": True,
-                }
-REPLY_MARKUP_STR = json.dumps(REPLY_MARKUP)
-
 REMOVE_KEYBOARD_MARKUP = {"remove_keyboard": True}
 REMOVE_KEYBOARD_MARKUP_STR = json.dumps(REMOVE_KEYBOARD_MARKUP)
 
 
 def send_message(chat_set: set[int], message: str, 
                  image: Optional[io.BytesIO],
-                 use_reply_keyboard: bool = False,
+                 reply_buttons_count: Optional[int] = None,
                  location_str: str = '',
                  want_user_location: bool = False,
                  ) -> None:
@@ -67,7 +56,16 @@ def send_message(chat_set: set[int], message: str,
         else:
             if want_user_location:
                 markup = USER_LOCATION_STR
-            elif use_reply_keyboard:
+            elif reply_buttons_count:
+                first_line_buttons_count = reply_buttons_count // 2
+                REPLY_KEYBOARD = [[str(i) for i in range(1, first_line_buttons_count + 1)],
+                                  [str(i) for i in range(first_line_buttons_count + 1, reply_buttons_count + 1)]]
+                REPLY_MARKUP = {"keyboard": REPLY_KEYBOARD, 
+                                "one_time_keyboard": True,
+                                # "is_persistent": False,
+                                "resize_keyboard": True,
+                                }
+                REPLY_MARKUP_STR = json.dumps(REPLY_MARKUP)
                 markup = REPLY_MARKUP_STR
             else:
                 markup = REMOVE_KEYBOARD_MARKUP_STR

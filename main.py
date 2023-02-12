@@ -317,7 +317,7 @@ def _lambda_handler(event: dict, context) -> dict:
             db_update_feedback = update_db(event_data, city_options)
             text = create_choice_message(city_options)
             tg_api_connector.send_message({chat_id}, text, None,
-                    use_reply_keyboard=True)
+                    reply_buttons_count=len(city_options))
             return cfg.LAMBDA_SUCCESS
         
         else:

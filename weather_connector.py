@@ -42,14 +42,15 @@ def get_weather_text(city: City) -> str:
         return ''
 
 
-def get_weather_image_and_tz(city: City, dark_mode: bool) -> Optional[io.BytesIO]:
+def get_weather_image_and_tz(city: City, dark_mode: bool) \
+        -> tuple[Optional[io.BytesIO], str]:
     try:
         return _get_weather_image_and_tz(city, dark_mode)
     except Exception as e:
         utils.print_with_time(f'Exception {e} in'
                 f' weather_connector.get_weather_image({city.local_name})')
         utils.print_with_time(f'Traceback:\n{traceback.print_exc}')
-        return None
+        return None, ''
 
 
 def _http_get_weather(city: City) -> Weather:
@@ -166,7 +167,8 @@ def get_city_options(
         yield city
 
 
-def _get_meteoblue_pic_url_and_tz(url_suffix_for_sig: str, dark_mode: bool) -> str:
+def _get_meteoblue_pic_url_and_tz(url_suffix_for_sig: str, dark_mode: bool) \
+        -> tuple[str, str]:
     url = cfg.METEOBLUE_GET_CITI_INFO_PREFIX + url_suffix_for_sig
     dark_mode = str(dark_mode).lower()
     cookies = cfg.METEOBLUE_COOKIES
@@ -217,7 +219,7 @@ def _crop_image(image_bytes: io.BytesIO) -> io.BytesIO:
     return cropped_bytes_object
 
 
-def _get_weather_image_and_tz(city: City, dark_mode: bool) -> io.BytesIO:
+def _get_weather_image_and_tz(city: City, dark_mode: bool) -> tuple[io.BytesIO, str]:
     # utils.print_with_time(f'    START getting picture url')
     picture_url, tz = _get_meteoblue_pic_url_and_tz(city.url_suffix_for_sig, 
                                          dark_mode)

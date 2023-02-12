@@ -5,15 +5,43 @@ test_event_bridge = {
         "account": "123456789012",
         "time": "1970-01-01T00:00:00Z",
         "region": "us-east-1",
-        "resources": ["arn:aws:events:us-east-1:123456789012:rule/ExampleRule"],
+        "resources": ["arn:aws:events:us-east-1:123456789012:rule/ts_1676146104_23_10_chat_-1001899507998"],
         "detail": {},
     }
 
-chat_id = 534111842
-# chat_id = -1001899507998  # test group for bots
+# chat_id = 534111842
+chat_id = -1001899507998  # test group for bots
 commands = [
+    '/home clear',
+    # '/home осло',
+    '/time',
+    # '/time 4.4',
+    # '/home спб',
+    # '/time 19.19 20.20',
+    # '/шли ничего',
+    # '/time 4.3',
+    # '/time 4.6',
+    # '/time 13.16',
+    # '/time',
+    # '/time 4.4 вс',
+    # '/time 4.3 вс',
+    # '/time 4.5 вс',
+    # '/time 6.5 пн',
+    # '/time 7.4 пн',
+    # '/time 5.6 пн',
+    # '/time 5.5 чт',
+    # '/time 5.4 чт',
+    # '/time 5.6 чт',
+    # '/time 13.15 чт',
+    # '/time 13.20 чт',
+    # '/time 13.10 чт',
+    # '/time 13.05 чт',
+    # '/time 13.25 чт',
+    # '/time',
+    # '/time clear',
+    # '/time сб 9.45',
     # 'Here',
-    '/start',
+    # '/start',
     # '/сосновка',
     # '/5',
     # '/спб',
@@ -59,7 +87,7 @@ commands = [
 # events = [test_event_bridge]
 events = []
 
-# location_body = '{\"update_id\": \"124258214\", \"message\": {\"message_id\": \"2054\", \"from\": {\"id\": \"534111842\", \"is_bot\": \"False\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"language_code\": \"en\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482937\", \"reply_to_message\": {\"message_id\": \"2052\", \"from\": {\"id\": \"5887622494\", \"is_bot\": \"True\", \"first_name\": \"kobuleti_weather\", \"username\": \"kobuleti_weather_bot\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482838\", \"text\": \"Можете нажать на кнопочку Погода прямо тут, если хотите посмотреть погоду там, где вы находитесь\"}, \"location\": {\"latitude\": \"41.813107\", \"longitude\": \"41.782663\"}}}'
+location_body = '{\"update_id\": \"124258214\", \"message\": {\"message_id\": \"2054\", \"from\": {\"id\": \"534111842\", \"is_bot\": \"False\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"language_code\": \"en\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482937\", \"reply_to_message\": {\"message_id\": \"2052\", \"from\": {\"id\": \"5887622494\", \"is_bot\": \"True\", \"first_name\": \"kobuleti_weather\", \"username\": \"kobuleti_weather_bot\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482838\", \"text\": \"Можете нажать на кнопочку Погода прямо тут, если хотите посмотреть погоду там, где вы находитесь\"}, \"location\": {\"latitude\": \"41.813107\", \"longitude\": \"41.782663\"}}}'
 
 for command in commands:
 
@@ -133,3 +161,28 @@ for command in commands:
         "isBase64Encoded": "False"
     }
     events.append(event)
+
+from typing import NamedTuple, Any
+
+class LambdaContext(NamedTuple):
+    aws_request_id: str
+    log_group_name: str
+    log_stream_name: str
+    function_name: str
+    memory_limit_in_mb: int
+    function_version: str
+    invoked_function_arn: str
+    client_context: Any
+    identity: Any
+    
+    
+context = LambdaContext(
+        aws_request_id='654f275b-f673-46ab-a0f3-2c12f70b7b09',
+        log_group_name='/aws/lambda/kobuleti_weather',
+        log_stream_name='2023/02/08/[$LATEST]e6f6d4ae7ab049248cf4122ce9a57197',
+        function_name='kobuleti_weather',
+        memory_limit_in_mb=128,
+        function_version='$LATEST',
+        invoked_function_arn='arn:aws:lambda:us-east-1:145384694416:function:kobuleti_weather',
+        client_context=None,
+        identity=None)

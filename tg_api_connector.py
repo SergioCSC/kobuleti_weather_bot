@@ -43,7 +43,7 @@ def send_message(chat_set: set[int], message: str,
                  ) -> None:
     
     if message:
-        for c in '!=()#-.':
+        for c in '[]()~`>#+-=|{}.!':  # '_*[]()~`>#+-=|{}.!':  # '!=()#-.':
             message = message.replace(c, '\\' + c)
         # message = message.replace('=', '\=')
         # message = message.replace('(', '\(')
@@ -86,7 +86,6 @@ def send_message(chat_set: set[int], message: str,
         if image:
             image.seek(0)
         try:
-            utils.print_with_time(f'before sending telegram message')
             result = requests.post(telegram_request_url, 
                                    files={'photo': image} if image else {})
             utils.print_with_time(f'{telegram_request_url = }')

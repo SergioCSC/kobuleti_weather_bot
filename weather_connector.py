@@ -11,6 +11,7 @@ import re
 import io
 import json
 import requests
+import traceback
 from typing import NamedTuple
 from typing import Optional
 from typing import Generator
@@ -37,15 +38,17 @@ def get_weather_text(city: City) -> str:
         return text
     except Exception as e:
         utils.print_with_time(f'Exception {e} in weather_connector.http_get_weather({city.local_name})')
+        utils.print_with_time(f'Traceback:\n{traceback.print_exc}')
         return ''
 
 
-def get_weather_image(city: City, dark_mode: bool) -> Optional[io.BytesIO]:
+def get_weather_image_and_tz(city: City, dark_mode: bool) -> Optional[io.BytesIO]:
     try:
-        return _get_weather_image(city, dark_mode)
+        return _get_weather_image_and_tz(city, dark_mode)
     except Exception as e:
         utils.print_with_time(f'Exception {e} in'
                 f' weather_connector.get_weather_image({city.local_name})')
+        utils.print_with_time(f'Traceback:\n{traceback.print_exc}')
         return None
 
 
@@ -163,23 +166,36 @@ def get_city_options(
         yield city
 
 
-def _get_meteoblue_pic_url(url_suffix_for_sig: str, dark_mode: bool) -> str:
+def _get_meteoblue_pic_url_and_tz(url_suffix_for_sig: str, dark_mode: bool) -> str:
     url = cfg.METEOBLUE_GET_CITI_INFO_PREFIX + url_suffix_for_sig
     dark_mode = str(dark_mode).lower()
     cookies = cfg.METEOBLUE_COOKIES
     cookies['darkmode'] = dark_mode
     response = requests.get(url, cookies=cookies)
     body = response.text
+
+    utc_timezone_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_TIMEZONE_PLUS_PREFIX, body)] 
+    if not utc_timezone_starts:
+        utc_timezone_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_TIMEZONE_MINUS_PREFIX, body)]             
+        
+    if len(utc_timezone_starts) != 1:
+        starts = [body[i:i + 100] for i in utc_timezone_starts]
+        raise my_exceptions.MeteoblueParsingError(
+                f'found utc timezone starts: {starts}')    
     
+    utc_timezone_start = utc_timezone_starts[0]
+    utc_timezone = body[utc_timezone_start + 4: utc_timezone_start + 10]
+
     picture_url_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_PICTURE_URL_PREFIX, body)]
     if len(picture_url_starts) != 1:
+        starts = [body[i:i + 100] for i in picture_url_starts]
         raise my_exceptions.MeteoblueParsingError(
-                f'found picture url starts: {picture_url_starts}')
+                f'found picture url starts: {starts}')
     picture_url_start = picture_url_starts[0]
     picture_url_len = body[picture_url_start:].find(' ')
     picture_url = body[picture_url_start:picture_url_start + picture_url_len]
     picture_url = picture_url.replace('&amp;', '&')
-    return picture_url
+    return picture_url, utc_timezone
 
 
 def _crop_image(image_bytes: io.BytesIO) -> io.BytesIO:
@@ -201,9 +217,9 @@ def _crop_image(image_bytes: io.BytesIO) -> io.BytesIO:
     return cropped_bytes_object
 
 
-def _get_weather_image(city: City, dark_mode: bool) -> io.BytesIO:
+def _get_weather_image_and_tz(city: City, dark_mode: bool) -> io.BytesIO:
     # utils.print_with_time(f'    START getting picture url')
-    picture_url = _get_meteoblue_pic_url(city.url_suffix_for_sig, 
+    picture_url, tz = _get_meteoblue_pic_url_and_tz(city.url_suffix_for_sig, 
                                          dark_mode)
     utils.print_with_time(f'    got picture url')
     # utils.print_with_time(f'    START getting picture')
@@ -212,7 +228,7 @@ def _get_weather_image(city: City, dark_mode: bool) -> io.BytesIO:
     # utils.print_with_time(f'    START cropping picture')
     image_bytes = io.BytesIO(response.content)
     cropped_image_bytes = _crop_image(image_bytes)
-    return cropped_image_bytes
+    return cropped_image_bytes, tz
 
 
 def _get_openweathermap_coordinates_and_name(city_name: str) -> tuple[str, str]:

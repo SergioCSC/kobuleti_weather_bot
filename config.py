@@ -22,13 +22,18 @@ METEOBLUE_GEOCODING_FIXED_PARAMS = 'language=ru&itemsPerPage=10&query='
 METEOBLUE_GET_CITI_INFO_PREFIX = 'https://www.meteoblue.com/ru/погода/неделя/'
 
 METEOBLUE_PICTURE_URL_PREFIX = 'https://my.meteoblue.com/visimage/meteogram_web_hd' # '?look='
-
+METEOBLUE_TIMEZONE_PLUS_PREFIX = 'UTC +'
+METEOBLUE_TIMEZONE_MINUS_PREFIX = 'UTC -'
 METEOBLUE_COOKIES = {'temp':'CELSIUS', 'locale': 'ru_RU', 'speed': 'METER_PER_SECOND'}
 
 TELEGRAM_URL_PREFIX = 'https://api.telegram.org/bot'
 
 BOT_NAME = 'kobuleti_weather_bot'
-DEFAULT_CITY = 'Кобулети'
 
 DEFAULT_DARKMODE = False
 SWITCH_DARKMODE_COMMAND = '/dark'
+
+DEFAULT_CITY = 'Кобулети'
+CHAT_CITY_EXPIRATION_TIME_SEC = 60 * 60 * 24 * 30  # 60 * 60 * 24 * 365
+
+LAMBDA_SUCCESS = {'statusCode': 200, 'body': 'Success'}

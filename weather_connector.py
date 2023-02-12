@@ -98,8 +98,16 @@ def _create_weather_text(city: City, w: Weather) -> str:
         weather_icon = '☁ '
     elif w.short_description == 'Rain':
         weather_icon = '💧 '
+    elif w.short_description == 'Drizzle':
+        weather_icon = '🌧 '
+    elif w.short_description == 'Mist':
+        weather_icon = '🌫 '
+    elif w.short_description == 'Smoke':
+        weather_icon = '🌫 '
     elif w.short_description == 'Snow':
         weather_icon = '❄ '
+    elif w.short_description == 'Thunderstorm':
+        weather_icon = '⚡ '
     else: 
         weather_icon = w.short_description + ' '
 

@@ -262,8 +262,9 @@ def _lambda_handler(event: dict, context) -> dict:
         city_options = list(weather_connector.get_city_options(lat=lat, lon=lon))
         
         if not city_options:
+            city_str = event_data.info.replace('_', ' ')
             text = f'Здравствуйте. Вот ищу я, ищу ... хоть убей, нет ни одного' \
-                f' {event_data.info}. Странно это как-то ...'
+                f' {city_str}. Странно это как-то ...'
             
             tg_api_connector.send_message({chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
@@ -307,8 +308,9 @@ def _lambda_handler(event: dict, context) -> dict:
         city_options = list(weather_connector.get_city_options(city_name=event_data.info))
         
         if not city_options:
+            city_str = event_data.info.replace('_', ' ')
             text = f'Здравствуйте. Вот ищу я, ищу ... хоть убей, нет ни одного' \
-                f' {event_data.info}. Странно это как-то ...'
+                f' {city_str}. Странно это как-то ...'
             
             tg_api_connector.send_message({chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS

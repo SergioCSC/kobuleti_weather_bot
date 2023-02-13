@@ -34,6 +34,12 @@ def parse_event(event) -> EventData:
         utils.print_with_time(update)
         key = 'message'
         if key in update:
+            to_bool = {True: True, 'True': True, False: False, 'False': False}
+            reply_to_bot = update[key].get('reply_to_message', {}).get('from', {}).get('is_bot', True)
+            reply_to_bot = to_bool.get(reply_to_bot, True)
+            if not reply_to_bot:  # it's reply to reply (not reply to bot)
+                return EventData(EventType.OTHER, None, '')
+    
             chat_id = int(update[key]['chat']['id'])
             # message_type = update[key].get('entities',[{}])[0].get('type')
             
@@ -60,7 +66,7 @@ def parse_event(event) -> EventData:
 
             if text.lower() == '/here':
                 return EventData(EventType.HERE, chat_id, '')
-            
+
             if text.lower() == '/start':
                 return EventData(EventType.START, chat_id, '')
 
@@ -75,7 +81,7 @@ def parse_event(event) -> EventData:
             
             if text.lower() == '/show':
                 return EventData(EventType.SHOW_CITIES, chat_id, '')
-            
+
             if text.lower().startswith('/time') or text.lower().startswith('/буди'):
                 if text.lower().startswith('/time'):
                     time_str = text[len('/time'):].strip()

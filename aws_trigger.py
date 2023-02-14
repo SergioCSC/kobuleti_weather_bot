@@ -41,7 +41,7 @@ def _parse_time(time_str: str) -> Optional[TimeOfDay]:
     if time_str[0] in '+-':
         time_str = time_str[1:]
 
-    for possible_delimeter in (':', '_', '.'):
+    for possible_delimeter in (':', '_', '.', ',', 'ю', 'б'):
         time_str = time_str.replace(possible_delimeter, ':')
         
     tokens = [token.strip() for token in time_str.split(':')]

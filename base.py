@@ -21,7 +21,7 @@ def get_chats() -> dict[int, dict[str, Any]]:
     chats = response['Items']
     chats = {chat['id']: chat for chat in chats}
     
-    if not cfg.IN_AWS_LAMBDA:
+    if not cfg.IN_AWS_LAMBDA:  # for debug
         chats = {k: v for k, v in chats.items() if k in (534111842, -1001899507998)}
     
     for chat in chats.values():

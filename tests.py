@@ -12,10 +12,10 @@ test_event_bridge = {
 # chat_id = 534111842
 chat_id = -1001899507998  # test group for bots
 commands = [
-    '/петрпавловск камчатский',
+    '/time',
+    # '/петрпавловск камчатский',
     # '/лондон',
     # '/home clear',
-    # '/time',
     # '/time 4.4',
     # '/home спб',
     # '/time 19.19 20.20',
@@ -98,7 +98,7 @@ for command in commands:
 
     body = f'{body_start}{chat_id}{body_middle}{command}{body_finish}'
     # body = location_body
-    body = reply_to_reply_body
+    # body = reply_to_reply_body
     event = {
         "version": "1.0",
         "resource": "/kobuleti_weather",

@@ -147,6 +147,8 @@ def _lambda_handler(event: dict, context) -> dict:
     chat_id = event_data.chat_id
     
     if event_data.type is EventType.SCHEDULED:
+        tg_api_connector.send_message({chat_id}, messages.HAVE_TO_THINK_TEXT, None)
+        
         chats = base.get_chats()
         
         chat_ids = [chat_id] if chat_id else chats.keys()
@@ -206,7 +208,7 @@ def _lambda_handler(event: dict, context) -> dict:
                 f'{aws_trigger.time_2_str(time_of_day, weekday)}'
         tg_api_connector.send_message({chat_id}, text, None)
         return cfg.LAMBDA_SUCCESS
-    
+
     if event_data.type is EventType.LIST_CRON_TRIGGERS:
         timezone = get_chat_timezone(chat_id)
         if not timezone:
@@ -257,7 +259,7 @@ def _lambda_handler(event: dict, context) -> dict:
         aws_trigger.clear_aws_triggers(chat_id, context)
         text = 'Фух, хорошо, больше никаких рутинных напоминалок!' \
                 f' Раз такое дело, вечерком разберу и почищу любимый морской хронометр ...'
-        picture_url = 'https://memepedia.ru/wp-content/uploads/2019/08/nu-da-nu-da-poshel-ya-na-her.jpg'
+        picture_url = 'https://www.meme-arsenal.com/memes/40027772b5abdd71c3ec57974b14f861.jpg'
         response = requests.get(picture_url)
         image = io.BytesIO(response.content)
         tg_api_connector.send_message({chat_id}, text, image)
@@ -325,12 +327,12 @@ def _lambda_handler(event: dict, context) -> dict:
             return cfg.LAMBDA_SUCCESS
         
         city_options = list(weather_connector.get_city_options(city_name=event_data.info))
-        
+
         if not city_options:
             city_str = event_data.info.replace('_', ' ')
             text = f'Здравствуйте. Вот ищу я, ищу ... хоть убей, нет ни одного' \
                 f' {city_str}. Странно это как-то ...'
-            
+
             tg_api_connector.send_message({chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
 
@@ -363,21 +365,23 @@ def _lambda_handler(event: dict, context) -> dict:
             return cfg.LAMBDA_SUCCESS
 
         if command_type in (EventType.HOME_CITY, EventType.CITY, EventType.USER_LOCATION):  
+            tg_api_connector.send_message({chat_id}, messages.HAVE_TO_THINK_TEXT, None)
+            
             chats = base.get_chats()
             dark_mode = chats.get(chat_id, {}).get('dark_mode', cfg.DEFAULT_DARKMODE)  
             text, image, tz = get_text_image_tz(chosen_city, dark_mode)
             if command_type in (EventType.HOME_CITY, EventType.USER_LOCATION):
                 c = chosen_city
                 chosen_city = City(
-                        c.local_name, 
-                        c.iso2, 
-                        c.country, 
+                        c.local_name,
+                        c.iso2,
+                        c.country,
                         c.admin_subject,
-                        c.lat, 
-                        c.lon, 
-                        c.asl, 
-                        c.population, 
-                        c.distance, 
+                        c.lat,
+                        c.lon,
+                        c.asl,
+                        c.population,
+                        c.distance,
                         tz,
                         c.url_suffix_for_sig)
                 base.save_chat_city(chat_id, chosen_city)
@@ -453,7 +457,8 @@ def _lambda_handler(event: dict, context) -> dict:
                 
         tg_api_connector.send_message({chat_id}, text, None)
         return cfg.LAMBDA_SUCCESS
-
+    
+    tg_api_connector.send_message({chat_id}, messages.HAVE_TO_THINK_TEXT, None)
     for city in cities:
         text, image, _ = get_text_image_tz(city, dark_mode)
         tg_api_connector.send_message({chat_id}, text, image)

@@ -175,27 +175,7 @@ def get_city_options(
         yield city
 
 
-def _get_meteoblue_pic_url_and_tz(url_suffix_for_sig: str, dark_mode: bool) \
-        -> tuple[str, str]:
-    url = cfg.METEOBLUE_GET_CITI_INFO_PREFIX + url_suffix_for_sig
-    dark_mode = str(dark_mode).lower()
-    cookies = cfg.METEOBLUE_COOKIES
-    cookies['darkmode'] = dark_mode
-    response = requests.get(url, cookies=cookies)
-    body = response.text
-
-    utc_timezone_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_TIMEZONE_PLUS_PREFIX, body)] 
-    if not utc_timezone_starts:
-        utc_timezone_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_TIMEZONE_MINUS_PREFIX, body)]             
-        
-    if len(utc_timezone_starts) != 1:
-        starts = [body[i:i + 100] for i in utc_timezone_starts]
-        raise my_exceptions.MeteoblueParsingError(
-                f'found utc timezone starts: {starts}')    
-    
-    utc_timezone_start = utc_timezone_starts[0]
-    utc_timezone = body[utc_timezone_start + 4: utc_timezone_start + 10]
-
+def _get_meteoblue_pic_url(body: str) -> str:
     picture_url_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_PICTURE_URL_PREFIX, body)]
     if len(picture_url_starts) != 1:
         starts = [body[i:i + 100] for i in picture_url_starts]
@@ -205,6 +185,41 @@ def _get_meteoblue_pic_url_and_tz(url_suffix_for_sig: str, dark_mode: bool) \
     picture_url_len = body[picture_url_start:].find(' ')
     picture_url = body[picture_url_start:picture_url_start + picture_url_len]
     picture_url = picture_url.replace('&amp;', '&')
+    return picture_url
+
+
+def _get_meteoblue_tz(body: str) -> str:
+    utc_timezone_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_TIMEZONE_PLUS_PREFIX, body)] 
+    if not utc_timezone_starts:
+        utc_timezone_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_TIMEZONE_MINUS_PREFIX, body)]             
+    if not utc_timezone_starts:
+        gmt_timezone_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_TIMEZONE_GMT, body)]             
+        if len(gmt_timezone_starts) == 1:
+            utc_timezone = "+00:00"
+            return utc_timezone
+
+    if len(utc_timezone_starts) != 1:
+        starts = [body[i:i + 100] for i in utc_timezone_starts]
+        raise my_exceptions.MeteoblueParsingError(
+                f'found utc timezone starts: {starts}')    
+    
+    utc_timezone_start = utc_timezone_starts[0]
+    utc_timezone = body[utc_timezone_start + 4: utc_timezone_start + 10]
+    return utc_timezone
+
+
+def _get_meteoblue_pic_url_and_tz(url_suffix_for_sig: str, dark_mode: bool) \
+        -> tuple[str, str]:
+    url = cfg.METEOBLUE_GET_CITI_INFO_PREFIX + url_suffix_for_sig
+    dark_mode = str(dark_mode).lower()
+    cookies = cfg.METEOBLUE_COOKIES
+    cookies['darkmode'] = dark_mode
+    response = requests.get(url, cookies=cookies)
+    body = response.text
+
+    utc_timezone = _get_meteoblue_tz(body)
+    picture_url = _get_meteoblue_pic_url(body)
+    
     return picture_url, utc_timezone
 
 

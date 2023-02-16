@@ -10,6 +10,9 @@ from functools import cache
 import time
 
 
+RETRY_ATTEMPTS = 0
+MAXIMUM_AGE_OF_EVENT_IN_SECONDS = 60
+
 
 class TimeOfDay(NamedTuple):
     hours: int
@@ -29,10 +32,6 @@ class Weekday(Enum):
     THURSDAY = auto()
     FRIDAY = auto()
     SATURDAY = auto()
-
-
-RETRY_ATTEMPTS = 0
-MAXIMUM_AGE_OF_EVENT_IN_SECONDS = 60
 
 
 @cache

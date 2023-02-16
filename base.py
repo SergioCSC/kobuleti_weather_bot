@@ -132,7 +132,8 @@ def clear_cities(chat_id: int) -> None:
 def list_cities(chat_id: int) -> list[City]:
     chat = _get_chat(chat_id)
     cities = chat.get('cities', [])
-    utils.print_with_time(f'List of cities for {chat_id}: {", ".join(cities)}')
+    cities_str = [c.local_name for c in cities]
+    utils.print_with_time(f'List of cities for {chat_id}: {", ".join(cities_str)}')
     return cities
 
 

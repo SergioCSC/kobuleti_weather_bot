@@ -325,6 +325,12 @@ def _lambda_handler(event: dict, context) -> dict:
             text = messages.CITY_CITY_TEXT
             tg_api_connector.send_message({chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
+            
+        if event_data.type is EventType.ADD_CITY:
+            if len(base.list_cities(chat_id)) >= cfg.MAX_SAVED_CITIES_PER_USER:
+                text = messages.TOO_MANY_CITIES_TEXT
+                tg_api_connector.send_message({chat_id}, text, None)
+                return cfg.LAMBDA_SUCCESS
         
         city_options = list(weather_connector.get_city_options(city_name=event_data.info))
 

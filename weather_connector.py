@@ -137,7 +137,8 @@ def _create_weather_text(city: City, w: Weather,
         f'\n💨 ветер {w.wind_speed_ms:.0f} м/с'
         f'\n🚰 влажность {w.humidity_percent}%'
         f'\n🎈 давление {w.pressure_mm_hg} мм рт. ст.'
-        f'\n🌅 восход {sunrise}   🌇 закат {sunset}'
+        f'\n🌅 восход {sunrise}'
+        f'\n🌇 закат {sunset}'
     )
 
     return city_text + '\n\n' + weather_text

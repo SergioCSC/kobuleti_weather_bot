@@ -1,4 +1,5 @@
 from utils import print_with_time
+from time_of_day import TimeOfDay, parse_time
 
 import boto3
 import botocore
@@ -14,11 +15,6 @@ RETRY_ATTEMPTS = 0
 MAXIMUM_AGE_OF_EVENT_IN_SECONDS = 60
 
 
-class TimeOfDay(NamedTuple):
-    hours: int
-    minutes: Optional[int]
-
-
 class TimeZone(NamedTuple):
     hours: int
     minutes: int
@@ -32,34 +28,6 @@ class Weekday(Enum):
     THURSDAY = auto()
     FRIDAY = auto()
     SATURDAY = auto()
-
-
-@cache
-def _parse_time(time_str: str) -> Optional[TimeOfDay]:
-    multiplier = -1 if time_str[0] == '-' else 1
-    if time_str[0] in '+-':
-        time_str = time_str[1:]
-
-    for possible_delimeter in (':', '_', '.', ',', 'ю', 'б'):
-        time_str = time_str.replace(possible_delimeter, ':')
-        
-    tokens = [token.strip() for token in time_str.split(':')]
-    if not tokens or not all(token.isdigit() for token in tokens):
-        return None
-    tokens = [int(st) for st in tokens]
-    tokens = tokens[:2]
-    hours = tokens[0]
-    
-    if not 0 <= hours < 24:
-        return None
-    
-    minutes = 0
-    if len(tokens) == 2:
-        minutes = tokens[1]
-        if not 0 <= minutes < 60:
-            return None
-    
-    return TimeOfDay(hours * multiplier, minutes * multiplier)
 
 
 @cache
@@ -84,13 +52,13 @@ def _parse_time_str(time_str: str) -> tuple[Optional[TimeOfDay], Optional[Weekda
         return None, None
     
     if len(tokens) == 1:
-        return _parse_time(tokens[0]), None
+        return parse_time(tokens[0]), None
     
     if len(tokens) == 2:
-        if time_of_day := _parse_time(tokens[0]):
+        if time_of_day := parse_time(tokens[0]):
             weekday_str = tokens[1]
         else:
-            time_of_day = _parse_time(tokens[1])
+            time_of_day = parse_time(tokens[1])
             weekday_str = tokens[0]
         
         weekday = [d for d in Weekday if d.name.lower() == weekday_str]

@@ -7,6 +7,7 @@ import tg_api_connector
 from event import EventType, EventData
 import messages
 import aws_trigger
+from time_of_day import parse_time
 
 import io
 import json
@@ -527,7 +528,7 @@ def get_chat_timezone(chat_id: int) -> Optional[aws_trigger.TimeOfDay]:
         return None
 
     chat_timezone_str = chat_city.tz
-    chat_timezone = aws_trigger._parse_time(chat_timezone_str)
+    chat_timezone = parse_time(chat_timezone_str)
     return chat_timezone
 
 
@@ -543,9 +544,10 @@ def create_choice_message(city_options: list[City]) -> str:
 def get_text_image_tz(city: City, dark_mode: bool) \
         -> tuple[str, Optional[io.BytesIO], str]:
 
-    weather_image, tz, temp = weather_connector.get_weather_image_and_tz_and_temp(
+    weather_image, tz, temp, sunrise, sunset \
+            = weather_connector.get_weather_image_tz_temp_sun(
             city, dark_mode)
-    weather_text = weather_connector.get_weather_text(city, temp)
+    weather_text = weather_connector.get_weather_text(city, temp, sunrise, sunset)
 
     not_found_start = f'{city.local_name}, говорите ... \n\n'
 

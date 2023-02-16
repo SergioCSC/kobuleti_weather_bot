@@ -26,6 +26,10 @@ METEOBLUE_TIMEZONE_PLUS_PREFIX = 'UTC +'
 METEOBLUE_TIMEZONE_MINUS_PREFIX = 'UTC -'
 METEOBLUE_TIMEZONE_GMT = '<span class="value">GMT </span>'
 
+METEOBLUE_WATER_TEMP_NODE_TITLE = 'title="Tемпература воды'
+METEOBLUE_WATER_TEMP_BLOCK_START = '<td><div class="cell">'
+METEOBLUE_WATER_TEMP_BLOCK_END = '°</div></td>'
+
 METEOBLUE_COOKIES = {'temp':'CELSIUS', 'locale': 'ru_RU', 'speed': 'METER_PER_SECOND'}
 
 TELEGRAM_URL_PREFIX = 'https://api.telegram.org/bot'

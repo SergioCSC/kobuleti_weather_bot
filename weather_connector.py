@@ -29,11 +29,11 @@ class Weather(NamedTuple):
     long_description: str
 
 
-def get_weather_text(city: City) -> str:
+def get_weather_text(city: City, water_temp: Optional[int]) -> str:
     try:
         # utils.print_with_time(f'START got text from openweathermap.org')
         weather = _http_get_weather(city)
-        text = _create_weather_text(city, weather)
+        text = _create_weather_text(city, weather, water_temp)
         utils.print_with_time(f'got text from openweathermap.org')
         return text
     except Exception as e:
@@ -42,15 +42,15 @@ def get_weather_text(city: City) -> str:
         return ''
 
 
-def get_weather_image_and_tz(city: City, dark_mode: bool) \
-        -> tuple[Optional[io.BytesIO], str]:
+def get_weather_image_and_tz_and_temp(city: City, dark_mode: bool) \
+        -> tuple[Optional[io.BytesIO], str, Optional[int]]:
     try:
-        return _get_weather_image_and_tz(city, dark_mode)
+        return _get_weather_image_and_tz_and_temp(city, dark_mode)
     except Exception as e:
         utils.print_with_time(f'Exception {e} in'
                 f' weather_connector.get_weather_image({city.local_name})')
         utils.print_with_time(f'Traceback:\n{traceback.print_exc}')
-        return None, ''
+        return None, '', None
 
 
 def _http_get_weather(city: City) -> Weather:
@@ -90,7 +90,7 @@ def _http_get_weather(city: City) -> Weather:
                   )
 
     
-def _create_weather_text(city: City, w: Weather) -> str:
+def _create_weather_text(city: City, w: Weather, water_temp: Optional[int]) -> str:
     weather_icon = ''
     if w.short_description == 'Clear':
         weather_icon = '🌞 '
@@ -127,10 +127,11 @@ def _create_weather_text(city: City, w: Weather) -> str:
             # f' {w.lon:.2f}'\
             
     weather_text = (
-        f'🌡 {w.temp_celsius:.0f} °C, {weather_icon}{w.long_description}\n'
-        f'💨 ветер {w.wind_speed_ms:.0f} м/с\n'
-        f'🚰 влажность {w.humidity_percent}%\n'
-        f'🎈 давление {w.pressure_mm_hg} мм рт. ст.'
+        f'🌡 {w.temp_celsius:.0f} °C{",  🌊 вода " + str(water_temp) + " °C" if water_temp else ""}'
+        f'\n{weather_icon}{w.long_description}'
+        f'\n💨 ветер {w.wind_speed_ms:.0f} м/с'
+        f'\n🚰 влажность {w.humidity_percent}%'
+        f'\n🎈 давление {w.pressure_mm_hg} мм рт. ст.'
     )
 
     return city_text + '\n\n' + weather_text
@@ -208,8 +209,36 @@ def _get_meteoblue_tz(body: str) -> str:
     return utc_timezone
 
 
-def _get_meteoblue_pic_url_and_tz(url_suffix_for_sig: str, dark_mode: bool) \
-        -> tuple[str, str]:
+def _get_meteoblue_water_temp(body: str) -> Optional[int]:
+    water_temp_node_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_WATER_TEMP_NODE_TITLE, body)] 
+    if len(water_temp_node_starts) != 1:
+        return None
+    water_node_start = water_temp_node_starts[0]
+    body = body[water_node_start:]
+    temp_block_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_WATER_TEMP_BLOCK_START, body)]
+    if not temp_block_starts:
+        return None
+    temp_block_start = temp_block_starts[0]
+    body = body[temp_block_start + len(cfg.METEOBLUE_WATER_TEMP_BLOCK_START):]
+    
+    temp_block_ends = [m.start() for m in re.finditer(cfg.METEOBLUE_WATER_TEMP_BLOCK_END, body)]
+    if not temp_block_ends:
+        return None
+    temp_block_end = temp_block_ends[0]
+    
+    temp_str = body[:temp_block_end]
+    if temp_str.isdigit() or temp_str[0] == '-' and temp_str[1:].isdigit():
+        temperature = int(temp_str)
+        return temperature
+    
+    return None
+    
+    # if not utc_timezone_starts:
+    
+
+
+def _get_meteoblue_pic_url_and_tz_and_temp(url_suffix_for_sig: str, dark_mode: bool) \
+        -> tuple[str, str, Optional[int]]:
     url = cfg.METEOBLUE_GET_CITI_INFO_PREFIX + url_suffix_for_sig
     dark_mode = str(dark_mode).lower()
     cookies = cfg.METEOBLUE_COOKIES
@@ -218,9 +247,10 @@ def _get_meteoblue_pic_url_and_tz(url_suffix_for_sig: str, dark_mode: bool) \
     body = response.text
 
     utc_timezone = _get_meteoblue_tz(body)
+    water_temperature = _get_meteoblue_water_temp(body)
     picture_url = _get_meteoblue_pic_url(body)
     
-    return picture_url, utc_timezone
+    return picture_url, utc_timezone, water_temperature
 
 
 def _crop_image(image_bytes: io.BytesIO) -> io.BytesIO:
@@ -242,9 +272,10 @@ def _crop_image(image_bytes: io.BytesIO) -> io.BytesIO:
     return cropped_bytes_object
 
 
-def _get_weather_image_and_tz(city: City, dark_mode: bool) -> tuple[io.BytesIO, str]:
+def _get_weather_image_and_tz_and_temp(city: City, dark_mode: bool) \
+        -> tuple[io.BytesIO, str, Optional[int]]:
     # utils.print_with_time(f'    START getting picture url')
-    picture_url, tz = _get_meteoblue_pic_url_and_tz(city.url_suffix_for_sig, 
+    picture_url, tz, temp = _get_meteoblue_pic_url_and_tz_and_temp(city.url_suffix_for_sig, 
                                          dark_mode)
     utils.print_with_time(f'    got picture url')
     # utils.print_with_time(f'    START getting picture')
@@ -253,7 +284,7 @@ def _get_weather_image_and_tz(city: City, dark_mode: bool) -> tuple[io.BytesIO, 
     # utils.print_with_time(f'    START cropping picture')
     image_bytes = io.BytesIO(response.content)
     cropped_image_bytes = _crop_image(image_bytes)
-    return cropped_image_bytes, tz
+    return cropped_image_bytes, tz, temp
 
 
 def _get_openweathermap_coordinates_and_name(city_name: str) -> tuple[str, str]:

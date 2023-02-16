@@ -325,7 +325,7 @@ def _lambda_handler(event: dict, context) -> dict:
             text = messages.CITY_CITY_TEXT
             tg_api_connector.send_message({chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
-            
+
         if event_data.type is EventType.ADD_CITY:
             if len(base.list_cities(chat_id)) >= cfg.MAX_SAVED_CITIES_PER_USER:
                 text = messages.TOO_MANY_CITIES_TEXT
@@ -543,8 +543,9 @@ def create_choice_message(city_options: list[City]) -> str:
 def get_text_image_tz(city: City, dark_mode: bool) \
         -> tuple[str, Optional[io.BytesIO], str]:
 
-    weather_text = weather_connector.get_weather_text(city)
-    weather_image, tz = weather_connector.get_weather_image_and_tz(city, dark_mode)
+    weather_image, tz, temp = weather_connector.get_weather_image_and_tz_and_temp(
+            city, dark_mode)
+    weather_text = weather_connector.get_weather_text(city, temp)
 
     not_found_start = f'{city.local_name}, говорите ... \n\n'
 

@@ -216,8 +216,7 @@ def _get_meteoblue_tz(body: str) -> str:
 
     if len(utc_timezone_starts) != 1:
         starts = [body[i:i + 100] for i in utc_timezone_starts]
-        raise my_exceptions.MeteoblueParsingError(
-                f'found utc timezone starts: {starts}')    
+        return ''    
     
     utc_timezone_start = utc_timezone_starts[0]
     utc_timezone = body[utc_timezone_start + 4: utc_timezone_start + 10]

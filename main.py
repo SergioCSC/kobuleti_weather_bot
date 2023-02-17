@@ -406,7 +406,7 @@ def _lambda_handler(event: dict, context) -> dict:
             old_without_new_cities = db_update_feedback
             old_without_new_cities_names = [c.local_name for c in old_without_new_cities]
             
-            text = f'Буду напоминать о {city_name} по утрам'
+            text = f'Буду напоминать о {city_name}'
             if old_without_new_cities:
                 text += '. A ещё о ' + ', '.join(old_without_new_cities_names)
             
@@ -509,8 +509,8 @@ def create_city_description(city: City) -> str:
            f' {city.country}.' \
            f'{" {:,} чел,".format(p) if p else ""}' \
            f' {city.asl}м н.у.м.' \
-           f' {city.lat:.2f},'\
-           f' {city.lon:.2f}'
+           f' {city.lat:.3f},'\
+           f' {city.lon:.3f}'
 
 
 def get_chat_timezone(chat_id: int) -> Optional[aws_trigger.TimeOfDay]:
@@ -551,6 +551,7 @@ def create_choice_message(city_options: list[City]) -> str:
         city_description = create_city_description(city)
         text += f'{i + 1}. {city_description}\n\n'
     return text
+
 
 @cache
 def get_text_image_tz(city: City, dark_mode: bool) \

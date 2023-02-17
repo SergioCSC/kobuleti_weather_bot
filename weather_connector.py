@@ -213,6 +213,10 @@ def _get_meteoblue_tz(body: str) -> str:
         if len(gmt_timezone_starts) == 1:
             utc_timezone = "+00:00"
             return utc_timezone
+        wet_timezone_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_TIMEZONE_WET, body)]             
+        if len(wet_timezone_starts) == 1:
+            utc_timezone = "+00:00"
+            return utc_timezone
 
     if len(utc_timezone_starts) != 1:
         starts = [body[i:i + 100] for i in utc_timezone_starts]

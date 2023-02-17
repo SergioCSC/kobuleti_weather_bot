@@ -248,8 +248,8 @@ def _lambda_handler(event: dict, context) -> dict:
         city_names = [c.local_name for c in cities]
         cities_text = ', '.join(city_names)
 
-        text = messages.ABOUT_WEATHER_REPORT_TEXT
-        tg_api_connector.send_message({chat_id}, text, None)
+        text = messages.ABOUT_TIME_COMMAND_TEXT
+        tg_api_connector.send_message(fr, {chat_id}, text, None)
         
         text = f'Буду напоминать о {"городах " + cities_text if cities_text else "ПУСТОТЕ"} в:\n\n' + '\n'.join(times)
         tg_api_connector.send_message({chat_id}, text, image)
@@ -444,6 +444,9 @@ def _lambda_handler(event: dict, context) -> dict:
     chats = base.get_chats()
     
     if event_data.type is EventType.LIST_CITIES:
+        text = messages.ABOUT_LIST_COMMAND_TEXT
+        tg_api_connector.send_message(fr, {chat_id}, text, None)
+
         cities = chats.get(chat_id, {}).get('cities', [])
         if not cities:
             text = f'Вы просили напоминать о пустом множестве городов!' \

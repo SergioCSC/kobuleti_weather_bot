@@ -25,6 +25,7 @@ METEOBLUE_PICTURE_URL_PREFIX = 'https://my.meteoblue.com/visimage/meteogram_web_
 METEOBLUE_TIMEZONE_PLUS_PREFIX = 'UTC +'
 METEOBLUE_TIMEZONE_MINUS_PREFIX = 'UTC -'
 METEOBLUE_TIMEZONE_GMT = '<span class="value">GMT </span>'
+METEOBLUE_TIMEZONE_WET = '<span class="value">WET </span>'
 
 METEOBLUE_WATER_TEMP_NODE_TITLE = 'title="Tемпература воды'
 METEOBLUE_WATER_TEMP_BLOCK_START = '<td><div class="cell">'

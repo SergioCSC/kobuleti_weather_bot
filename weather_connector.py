@@ -229,7 +229,7 @@ def _get_meteoblue_tz(body: str) -> str:
 
 def _get_meteoblue_water_temp(body: str) -> Optional[int]:
     water_temp_node_starts = [m.start() for m in re.finditer(cfg.METEOBLUE_WATER_TEMP_NODE_TITLE, body)] 
-    if len(water_temp_node_starts) != 1:
+    if not water_temp_node_starts:
         return None
     water_node_start = water_temp_node_starts[0]
     body = body[water_node_start:]

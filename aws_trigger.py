@@ -107,7 +107,6 @@ def _add_time_shift(time_of_day: TimeOfDay, weekday: Optional[Weekday],
         additional_day = -1
 
     if weekday and additional_day:
-        weekday = Weekday.SUNDAY
         day_value = (weekday.value + additional_day) % len(Weekday)
         if day_value == 0:
             day_value += len(Weekday)

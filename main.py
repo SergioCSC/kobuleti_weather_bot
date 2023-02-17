@@ -410,7 +410,11 @@ def _lambda_handler(event: dict, context) -> dict:
         if command_type is not EventType.USER_LOCATION: 
             location_str = f'&latitude={chosen_city.lat}&longitude={chosen_city.lon}' \
                     f'&horizontal_accuracy=1500'
-            tg_api_connector.send_message({chat_id}, None, None, location_str=location_str)
+            tg_api_connector.send_message(fr, {chat_id}, None, None, location_str=location_str)
+
+        if not tz and command_type is EventType.HOME_CITY:
+            no_tz_text = 'не смог определить часовой пояс ... попробуем другой город?'
+            tg_api_connector.send_message(fr, {chat_id}, no_tz_text, None)
 
         return cfg.LAMBDA_SUCCESS
     

@@ -24,25 +24,26 @@ REMOVE_KEYBOARD_MARKUP = {"remove_keyboard": True}
 REMOVE_KEYBOARD_MARKUP_STR = json.dumps(REMOVE_KEYBOARD_MARKUP)
 
 
-def send_message(chat_set: set[int], message: str, 
+def send_message(message_to: str,
+                 chat_set: set[int],
+                 message: str,
                  image: Optional[io.BytesIO],
                  reply_buttons_count: Optional[int] = None,
                  location_str: str = '',
                  want_user_location: bool = False,
                  ) -> None:
-    
-    if message:
-        for c in '[]()~`>#+-=|{}.!':  # '_*[]()~`>#+-=|{}.!':  # '!=()#-.':
-            message = message.replace(c, '\\' + c)
-        # message = message.replace('=', '\=')
-        # message = message.replace('(', '\(')
-        # message = message.replace(')', '\)')
-        # message = message.replace('#', '\#')
-        # message = message.replace('-', '\-')
-        # message = message.replace('.', '\.')
-        message = urllib.parse.quote(message.encode('utf-8'))
-    
+
     for chat_id in chat_set:
+        if message:
+            for c in '[]()~`>#+-=|{}.!':  # '_*[]()~`>#+-=|{}.!':  # '!=()#-.':
+                message = message.replace(c, '\\' + c)
+            if str(chat_id).startswith('-100'):
+                username, user_id = message_to.split('&')
+                # message = f'{message_to},\n\n{message}'
+                message = f'[{username}](tg://user?id={user_id}),\n\n{message}'
+
+            message = urllib.parse.quote(message.encode('utf-8'))
+
         if location_str:
             telegram_request_url = (
                 f'{cfg.TELEGRAM_URL_PREFIX}'

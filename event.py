@@ -21,6 +21,7 @@ class EventType(Enum):
 
 
 class EventData(NamedTuple):
+    from_: str
     type: EventType
     chat_id: Optional[int]
     info: str

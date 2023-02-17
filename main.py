@@ -23,7 +23,7 @@ def parse_event(event) -> EventData:
     if event.get('detail-type') == 'Scheduled Event':  # event initiated by Event Bridge
         chat_id_str = event.get('resources')[0].split('/')[1].split('_')[-1]
         chat_id = int(chat_id_str) if chat_id_str.lstrip('-').isdigit() else None
-        return EventData(EventType.SCHEDULED, chat_id, '')
+        return EventData('', EventType.SCHEDULED, chat_id, '')
     elif event.get('httpMethod') in (
         'GET',
         'POST',
@@ -34,12 +34,17 @@ def parse_event(event) -> EventData:
         utils.print_with_time(update)
         key = 'message'
         if key in update:
+
+            message_from_username = update[key].get('from', {}).get('first_name', '')
+            message_from_id = update[key].get('from', {}).get('id', 0)
+            message_from = f'{message_from_username}&{message_from_id}'
+
             to_bool = {True: True, 'True': True, False: False, 'False': False}
             reply_to_bot = update[key].get('reply_to_message', {}).get('from', {}).get('is_bot', True)
             reply_to_bot = to_bool.get(reply_to_bot, True)
             if not reply_to_bot:  # it's reply to reply (not reply to bot)
                 utils.print_with_time(f'reply to reply. message: {update[key]}')
-                return EventData(EventType.OTHER, None, '')
+                return EventData(message_from, EventType.OTHER, None, '')
     
             chat_id = int(update[key]['chat']['id'])
             # message_type = update[key].get('entities',[{}])[0].get('type')
@@ -49,12 +54,12 @@ def parse_event(event) -> EventData:
                 location = update[key].get('location')
                 if not location:
                     utils.print_with_time(f'message without text and location: {update[key]}')
-                    return EventData(EventType.OTHER, None, '')
+                    return EventData(message_from, EventType.OTHER, None, '')
                 else:
                     latitude = location['latitude']
                     longitude = location['longitude']
                     location_str = f'{latitude},{longitude}'
-                    return EventData(EventType.USER_LOCATION, chat_id, 
+                    return EventData(message_from, EventType.USER_LOCATION, chat_id,
                                      location_str)
             text = bytes(text, 'utf-8').decode('utf-8').strip()
             
@@ -67,22 +72,22 @@ def parse_event(event) -> EventData:
                 text = text[:bot_mention_position].strip()
 
             if text.lower() == '/start':
-                return EventData(EventType.START, chat_id, '')
+                return EventData(message_from, EventType.START, chat_id, '')
 
             if text.lower() in ('/here', '/тут'):
-                return EventData(EventType.HERE, chat_id, '')
+                return EventData(message_from, EventType.HERE, chat_id, '')
 
             if text.lower() in ('/dark', '/тьма'):
-                return EventData(EventType.SWITCH_DARKMODE, chat_id, '')
+                return EventData(message_from, EventType.SWITCH_DARKMODE, chat_id, '')
             
             if text.lower() in ('/clear', '/очисти'):
-                return EventData(EventType.CLEAR_CITIES, chat_id, '')
+                return EventData(message_from, EventType.CLEAR_CITIES, chat_id, '')
             
             if text.lower() in ('/list', '/список'):
-                return EventData(EventType.LIST_CITIES, chat_id, '')
+                return EventData(message_from, EventType.LIST_CITIES, chat_id, '')
             
             if text.lower() in ('/report', '/сводка'):
-                return EventData(EventType.SHOW_CITIES, chat_id, '')
+                return EventData(message_from, EventType.SHOW_CITIES, chat_id, '')
 
             if text.lower().startswith('/time') or text.lower().startswith('/шли'):
                 if text.lower().startswith('/time'):
@@ -91,11 +96,11 @@ def parse_event(event) -> EventData:
                     time_str = text[len('/шли'):].strip()
 
                 if not time_str:
-                    return EventData(EventType.LIST_CRON_TRIGGERS, chat_id, '')
+                    return EventData(message_from, EventType.LIST_CRON_TRIGGERS, chat_id, '')
                 if time_str == 'clear' or time_str == 'никогда':
-                    return EventData(EventType.CLEAR_CRON_TRIGGERS, chat_id, '')
+                    return EventData(message_from, EventType.CLEAR_CRON_TRIGGERS, chat_id, '')
                 else:
-                    return EventData(EventType.ADD_CRON_TRIGGER, chat_id, time_str)
+                    return EventData(message_from, EventType.ADD_CRON_TRIGGER, chat_id, time_str)
             
             if text.lower().startswith('/add') or text.lower().startswith('/добавь'):
                 if text.lower().startswith('/add'):
@@ -103,7 +108,7 @@ def parse_event(event) -> EventData:
                 else:
                     city_name = text[len('/добавь'):].strip()
                 city_name = city_name.replace(' ', '_')  # TODO copypaste
-                return EventData(EventType.ADD_CITY, chat_id, city_name)
+                return EventData(message_from, EventType.ADD_CITY, chat_id, city_name)
 
             if text.lower().startswith('/home') or text.lower().startswith('/дом'):
                 if text.lower().startswith('/home'):
@@ -111,22 +116,22 @@ def parse_event(event) -> EventData:
                 else:
                     info = text[len('/дом'):].strip()
                 info = info.replace(' ', '_')  # TODO copypaste
-                return EventData(EventType.HOME_CITY, chat_id, info)
+                return EventData(message_from, EventType.HOME_CITY, chat_id, info)
 
             if text.startswith('/') and text[1:].strip().isdigit():
                 number = int(text[1:].strip())
-                return EventData(EventType.CHOOSE_CITY, chat_id, str(number - 1))
+                return EventData(message_from, EventType.CHOOSE_CITY, chat_id, str(number - 1))
 
             if text.startswith('/') and len(text) > 2:  # city command
                 city_name = text[1:].strip()
                 city_name = city_name.replace(' ', '_')  # TODO copypaste
                 if len(city_name) > 1:
-                    return EventData(EventType.CITY, chat_id, city_name)
+                    return EventData(message_from, EventType.CITY, chat_id, city_name)
             
             # if text.lower() == '/k':
-            #     return EventData(EventType.CITY, chat_id, default_city_name)
+            #     return EventData(message_from, EventType.CITY, chat_id, default_city_name)
     utils.print_with_time(f'can\'t parse message')
-    return EventData(EventType.OTHER, None, '')
+    return EventData('', EventType.OTHER, None, '')
 
 
 def lambda_handler(event: dict, context) -> dict:
@@ -146,9 +151,10 @@ def _lambda_handler(event: dict, context) -> dict:
         return cfg.LAMBDA_SUCCESS
     
     chat_id = event_data.chat_id
-    
+    fr = event_data.from_
+
     if event_data.type is EventType.SCHEDULED:
-        tg_api_connector.send_message({chat_id}, messages.HAVE_TO_THINK_TEXT, None)
+        tg_api_connector.send_message(fr, {chat_id}, messages.HAVE_TO_THINK_TEXT, None)
         
         chats = base.get_chats()
         
@@ -166,16 +172,16 @@ def _lambda_handler(event: dict, context) -> dict:
             for city in cities:
                 city_name = city.local_name            
                 text, image, _ = get_text_image_tz(city, dark_mode)
-                tg_api_connector.send_message({chat_id}, text, image)
+                tg_api_connector.send_message(fr, {chat_id}, text, image)
         return cfg.LAMBDA_SUCCESS
 
     if event_data.type is EventType.START:
         text = messages.START_TEXT
-        tg_api_connector.send_message({chat_id}, text, None)
+        tg_api_connector.send_message(fr, {chat_id}, text, None)
         return cfg.LAMBDA_SUCCESS
     
     if event_data.type is EventType.ADD_CRON_TRIGGER:
-        chat_timezone = get_chat_timezone(chat_id)
+        chat_timezone = get_chat_timezone(fr, chat_id)
         if not chat_timezone:
             return cfg.LAMBDA_SUCCESS
 
@@ -198,7 +204,7 @@ def _lambda_handler(event: dict, context) -> dict:
                     f'_/шли 9_\n\nили\n\n_/шли 9.30_\n\nили\n\n_/шли пн 9.30_\n\n' \
                     f'-- поставить сводку на каждый день на 9 или 9.30, либо только по понедельникам в 9.30\n\n' \
                     f'У нас с бумагами строго. Ладно, идите. Эй, постойте! Куда вы!\n\nНе слышит. Ладно, сбегает в регистратуру, оно полезно'
-            tg_api_connector.send_message({chat_id}, text, None)
+            tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
     
         chats = base.get_chats()
@@ -207,11 +213,11 @@ def _lambda_handler(event: dict, context) -> dict:
         cities_text = ', '.join(city_names)
         text = f'Буду напоминать о {"городах " + cities_text if cities_text else "ПУСТОТЕ"} в:\n\n' \
                 f'{aws_trigger.time_2_str(time_of_day, weekday)}'
-        tg_api_connector.send_message({chat_id}, text, None)
+        tg_api_connector.send_message(fr, {chat_id}, text, None)
         return cfg.LAMBDA_SUCCESS
 
     if event_data.type is EventType.LIST_CRON_TRIGGERS:
-        timezone = get_chat_timezone(chat_id)
+        timezone = get_chat_timezone(fr, chat_id)
         if not timezone:
             return cfg.LAMBDA_SUCCESS
 
@@ -252,7 +258,7 @@ def _lambda_handler(event: dict, context) -> dict:
         tg_api_connector.send_message(fr, {chat_id}, text, None)
         
         text = f'Буду напоминать о {"городах " + cities_text if cities_text else "ПУСТОТЕ"} в:\n\n' + '\n'.join(times)
-        tg_api_connector.send_message({chat_id}, text, image)
+        tg_api_connector.send_message(fr, {chat_id}, text, image)
         
         return cfg.LAMBDA_SUCCESS
 
@@ -263,7 +269,7 @@ def _lambda_handler(event: dict, context) -> dict:
         picture_url = 'https://www.meme-arsenal.com/memes/40027772b5abdd71c3ec57974b14f861.jpg'
         response = requests.get(picture_url)
         image = io.BytesIO(response.content)
-        tg_api_connector.send_message({chat_id}, text, image)
+        tg_api_connector.send_message(fr, {chat_id}, text, image)
         return cfg.LAMBDA_SUCCESS
 
     if event_data.type is EventType.HERE:
@@ -276,7 +282,7 @@ def _lambda_handler(event: dict, context) -> dict:
                 f' если хотите посмотреть погоду там, где вы находитесь'
                 # f' А если вы сидите не с телефона или просто не хотите делиться' \
                 # f' своим местоположением, то введите город'
-        tg_api_connector.send_message({chat_id}, text, None,
+        tg_api_connector.send_message(fr, {chat_id}, text, None,
                                       want_user_location=True)
         return cfg.LAMBDA_SUCCESS
     
@@ -292,12 +298,12 @@ def _lambda_handler(event: dict, context) -> dict:
             text = f'Здравствуйте. Вот ищу я, ищу ... хоть убей, нет ни одного' \
                 f' {city_str}. Странно это как-то ...'
             
-            tg_api_connector.send_message({chat_id}, text, None)
+            tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
 
         chosen_city = city_options[0]
         command_type = event_data.type
-        event_data = EventData(EventType.CHOOSE_CITY, chat_id, '')
+        event_data = EventData(fr, EventType.CHOOSE_CITY, chat_id, '')
     
     elif event_data.type in (EventType.CITY, EventType.ADD_CITY, EventType.HOME_CITY):
         if not event_data.info:
@@ -311,11 +317,11 @@ def _lambda_handler(event: dict, context) -> dict:
                             f' Напишите пока, пожалуйста, ваш город, вот так:\n\n' \
                             f'_/home Екатеринбург_\n\n' \
                             f'А Галя сейчас допьёт кофе и запишет вас'
-                tg_api_connector.send_message({chat_id}, text, None)
+                tg_api_connector.send_message(fr, {chat_id}, text, None)
                 return cfg.LAMBDA_SUCCESS
             command = event_data.type.name.lower().split('_')[0]
             text = messages.EMPTY_ADD_TEXT % (command, command)
-            tg_api_connector.send_message({chat_id}, text, None)
+            tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
         
         elif event_data.info == 'clear' \
@@ -323,18 +329,18 @@ def _lambda_handler(event: dict, context) -> dict:
             base.clear_chat_city(chat_id)
             text = 'Гааа-ляяяя! Забудь пожалуйста, где живёт этот гражданин!\n\n' \
                     f'База данных очищена, сударь'
-            tg_api_connector.send_message({chat_id}, text, None)
+            tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
         
         elif event_data.info == 'city':
             text = messages.CITY_CITY_TEXT
-            tg_api_connector.send_message({chat_id}, text, None)
+            tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
 
         if event_data.type is EventType.ADD_CITY:
             if len(base.list_cities(chat_id)) >= cfg.MAX_SAVED_CITIES_PER_USER:
                 text = messages.TOO_MANY_CITIES_TEXT
-                tg_api_connector.send_message({chat_id}, text, None)
+                tg_api_connector.send_message(fr, {chat_id}, text, None)
                 return cfg.LAMBDA_SUCCESS
         
         city_options = list(weather_connector.get_city_options(city_name=event_data.info))
@@ -344,20 +350,20 @@ def _lambda_handler(event: dict, context) -> dict:
             text = f'Здравствуйте. Вот ищу я, ищу ... хоть убей, нет ни одного' \
                 f' {city_str}. Странно это как-то ...'
 
-            tg_api_connector.send_message({chat_id}, text, None)
+            tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
 
         if len(city_options) > 1:
             db_update_feedback = update_db(event_data, city_options)
             text = create_choice_message(city_options)
-            tg_api_connector.send_message({chat_id}, text, None,
+            tg_api_connector.send_message(fr, {chat_id}, text, None,
                     reply_buttons_count=len(city_options))
             return cfg.LAMBDA_SUCCESS
         
         else:
             chosen_city = city_options[0]
             command_type = event_data.type
-            event_data = EventData(EventType.CHOOSE_CITY, chat_id, '')
+            event_data = EventData(fr, EventType.CHOOSE_CITY, chat_id, '')
     
     if event_data.type is EventType.CHOOSE_CITY:
         if not chosen_city:
@@ -372,12 +378,12 @@ def _lambda_handler(event: dict, context) -> dict:
                     f' Однако, у нашего отдела впереди вся ночь, я вызвал сотрудников' \
                     f' из отпусков. Однажды мы справимся! И сразу с вами свяжемся'
             
-            tg_api_connector.send_message({chat_id}, text, None)
+            tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
 
         tz = '1'
         if command_type in (EventType.HOME_CITY, EventType.CITY, EventType.USER_LOCATION):  
-            tg_api_connector.send_message({chat_id}, messages.HAVE_TO_THINK_TEXT, None)
+            tg_api_connector.send_message(fr, {chat_id}, messages.HAVE_TO_THINK_TEXT, None)
             
             chats = base.get_chats()
             dark_mode = chats.get(chat_id, {}).get('dark_mode', cfg.DEFAULT_DARKMODE)  
@@ -397,7 +403,7 @@ def _lambda_handler(event: dict, context) -> dict:
                         tz,
                         c.url_suffix_for_sig)
                 base.save_chat_city(chat_id, chosen_city)
-            tg_api_connector.send_message({chat_id}, text, image)
+            tg_api_connector.send_message(fr, {chat_id}, text, image)
 
         elif command_type is EventType.ADD_CITY:        
             db_update_feedback = update_db(event_data, [chosen_city])
@@ -410,7 +416,7 @@ def _lambda_handler(event: dict, context) -> dict:
             if old_without_new_cities:
                 text += '. A ещё о ' + ', '.join(old_without_new_cities_names)
             
-            tg_api_connector.send_message({chat_id}, text, None)
+            tg_api_connector.send_message(fr, {chat_id}, text, None)
         
         if command_type is not EventType.USER_LOCATION: 
             location_str = f'&latitude={chosen_city.lat}&longitude={chosen_city.lon}' \
@@ -422,8 +428,7 @@ def _lambda_handler(event: dict, context) -> dict:
             tg_api_connector.send_message(fr, {chat_id}, no_tz_text, None)
 
         return cfg.LAMBDA_SUCCESS
-    
-    
+
     elif event_data.type in (EventType.SWITCH_DARKMODE, EventType.CLEAR_CITIES):
         db_update_feedback = update_db(event_data)
 
@@ -433,7 +438,7 @@ def _lambda_handler(event: dict, context) -> dict:
     if event_data.type is EventType.SWITCH_DARKMODE:
         dark_mode = db_update_feedback
         text = f'Теперь картинка будет {"тёмная" if dark_mode else "светлая"}'
-        tg_api_connector.send_message({chat_id}, text, None)
+        tg_api_connector.send_message(fr, {chat_id}, text, None)
         return cfg.LAMBDA_SUCCESS
     
     assert event_data.type in (EventType.CLEAR_CITIES, 
@@ -441,7 +446,7 @@ def _lambda_handler(event: dict, context) -> dict:
     
     if event_data.type is EventType.CLEAR_CITIES:
         text = f'Напоминалки обо всех городах удалены'
-        tg_api_connector.send_message({chat_id}, text, None)
+        tg_api_connector.send_message(fr, {chat_id}, text, None)
         return cfg.LAMBDA_SUCCESS
 
     assert event_data.type in (EventType.LIST_CITIES, EventType.SHOW_CITIES)
@@ -462,7 +467,7 @@ def _lambda_handler(event: dict, context) -> dict:
                     + ' \n\n'.join(city_descriptions) \
                     + '\n\nОх, всего-то не упомнишь ...'
         
-        tg_api_connector.send_message({chat_id}, text, None)
+        tg_api_connector.send_message(fr, {chat_id}, text, None)
         return cfg.LAMBDA_SUCCESS
 
     assert event_data.type is EventType.SHOW_CITIES
@@ -474,13 +479,13 @@ def _lambda_handler(event: dict, context) -> dict:
         text = 'Сейчас-сейчас ... бегу ... ой, а ни одного' \
                 f' города-то вы и не заказывали ...'
                 
-        tg_api_connector.send_message({chat_id}, text, None)
+        tg_api_connector.send_message(fr, {chat_id}, text, None)
         return cfg.LAMBDA_SUCCESS
     
-    tg_api_connector.send_message({chat_id}, messages.HAVE_TO_THINK_TEXT, None)
+    tg_api_connector.send_message(fr, {chat_id}, messages.HAVE_TO_THINK_TEXT, None)
     for city in cities:
         text, image, _ = get_text_image_tz(city, dark_mode)
-        tg_api_connector.send_message({chat_id}, text, image)
+        tg_api_connector.send_message(fr, {chat_id}, text, image)
     return cfg.LAMBDA_SUCCESS
 
 
@@ -513,7 +518,7 @@ def create_city_description(city: City) -> str:
            f' {city.lon:.3f}'
 
 
-def get_chat_timezone(chat_id: int) -> Optional[aws_trigger.TimeOfDay]:
+def get_chat_timezone(message_to: str, chat_id: int) -> Optional[aws_trigger.TimeOfDay]:
     if not (chat_city := base.load_chat_city(chat_id)):
         if str(chat_id).startswith('-100'):  # if group chat
             text = f'Вы хотите установить время, но вы не говорите мне свой' \
@@ -523,7 +528,7 @@ def get_chat_timezone(chat_id: int) -> Optional[aws_trigger.TimeOfDay]:
             picture_url = 'https://www.meme-arsenal.com/memes/710dd6fb3af6cfec6b218229a9f22170.jpg'
             response = requests.get(picture_url)
             image_bytes = io.BytesIO(response.content)
-            tg_api_connector.send_message({chat_id}, text, image_bytes)
+            tg_api_connector.send_message(message_to, {chat_id}, text, image_bytes)
             
         else:
             text = f'Вы хотите установить время, но вы не говорите мне свой' \
@@ -535,8 +540,8 @@ def get_chat_timezone(chat_id: int) -> Optional[aws_trigger.TimeOfDay]:
             picture_url = 'https://www.meme-arsenal.com/memes/710dd6fb3af6cfec6b218229a9f22170.jpg'
             response = requests.get(picture_url)
             image_bytes = io.BytesIO(response.content)
-            tg_api_connector.send_message({chat_id}, text, image_bytes,
-                                want_user_location=True)
+            tg_api_connector.send_message(message_to, {chat_id}, text, image_bytes,
+                    want_user_location=True)
         return None
 
     chat_timezone_str = chat_city.tz

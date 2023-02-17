@@ -106,17 +106,31 @@ def load_command(chat_id: int) -> tuple[EventType, str, list[City]]:
     
     _put_chat(chat)
     utils.print_with_time(f'Command {command} from {chat_id} loaded from the table')
-    return  command, city_options
+    return command, city_options
+
+
+def _is_same_cities(c1: City, c2: City) -> bool:
+    return c1.local_name == c2.local_name \
+        and c1.iso2 == c2.iso2 \
+        and c1.country == c2.country \
+        and c1.admin_subject == c2.admin_subject \
+        and c1.population == c2.population \
+        and c1.lat == c2.lat \
+        and c1.lon == c2.lon \
+        and c1.asl == c2.asl
 
 
 def add_city(chat_id: int, new_city: City) -> list[str]:
     chat = _get_chat(chat_id)
 
     old_cities = chat.get('cities', [])
-    if new_city not in old_cities:
+    for old_city in old_cities:
+        if _is_same_cities(new_city, old_city):
+            break
+    else:
         chat['cities'] = old_cities + [new_city]
         _put_chat(chat)
-        
+
     utils.print_with_time(f'City {new_city} added to {chat_id} in the table')
     old_without_new_cities = [c for c in old_cities if c != new_city]
     return old_without_new_cities

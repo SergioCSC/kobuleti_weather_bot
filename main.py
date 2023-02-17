@@ -267,6 +267,10 @@ def _lambda_handler(event: dict, context) -> dict:
         return cfg.LAMBDA_SUCCESS
 
     if event_data.type is EventType.HERE:
+        if str(chat_id).startswith('-100'):
+            text = 'К сожалению, я умею получать вашу локацию только в личку. Таков путь'
+            tg_api_connector.send_message(fr, {chat_id}, text, None)
+            return cfg.LAMBDA_SUCCESS
         text = f'Можете нажать на кнопочку' \
                 f' "{messages.BUTTON_WEATHER_HERE_TEXT}",' \
                 f' если хотите посмотреть погоду там, где вы находитесь'

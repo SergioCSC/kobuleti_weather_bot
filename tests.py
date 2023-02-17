@@ -12,7 +12,13 @@ test_event_bridge = {
 # chat_id = 534111842
 chat_id = -1001899507998  # test group for bots
 commands = [
-    '/орехово зуево',
+    'степанцминда',
+    '/list',
+    # '/add foz do arelho',
+    # '/list',
+    # '/time',
+    # '/home foz do arelho',
+    # '/орехово зуево',
     # '/батуми',
     # '/ливерпуль',
     # '/москва',
@@ -94,7 +100,7 @@ commands = [
 # events = [test_event_bridge]
 events = []
 
-location_body = '{\"update_id\": \"124258214\", \"message\": {\"message_id\": \"2054\", \"from\": {\"id\": \"534111842\", \"is_bot\": \"False\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"language_code\": \"en\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482937\", \"reply_to_message\": {\"message_id\": \"2052\", \"from\": {\"id\": \"5887622494\", \"is_bot\": \"True\", \"first_name\": \"kobuleti_weather\", \"username\": \"kobuleti_weather_bot\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482838\", \"text\": \"Можете нажать на кнопочку Погода прямо тут, если хотите посмотреть погоду там, где вы находитесь\"}, \"location\": {\"latitude\": \"41.813107\", \"longitude\": \"41.782663\"}}}'
+location_body = '{\"update_id\": \"124258214\", \"message\": {\"message_id\": \"2054\", \"from\": {\"id\": \"534111842\", \"is_bot\": \"False\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"language_code\": \"en\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482937\", \"reply_to_message\": {\"message_id\": \"2052\", \"from\": {\"id\": \"5887622494\", \"is_bot\": \"True\", \"first_name\": \"kobuleti_weather\", \"username\": \"kobuleti_weather_bot\"}, \"chat\": {\"id\": \"534111842\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"type\": \"private\"}, \"date\": \"1675482838\", \"text\": \"Можете нажать на кнопочку Погода прямо тут, если хотите посмотреть погоду там, где вы находитесь\"}, \"location\": {\"latitude\": \"39.437\", \"longitude\": \"-9.214\"}}}'
 reply_to_reply_body = '{\"update_id\": 124259004, \"message\": {\"message_id\": 2214, \"from\": {\"id\": 534111842, \"is_bot\": \"False\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"language_code\": \"en\"}, \"chat\": {\"id\": -1001899507998, \"title\": \"Test Group for bots\", \"type\": \"supergroup\"}, \"date\": 1676275053, \"message_thread_id\": 2210, \"reply_to_message\": {\"message_id\": 2211, \"from\": {\"id\": 534111842, \"is_bot\": \"False\", \"first_name\": \"Sergio\", \"username\": \"n_log_n\", \"language_code\": \"en\"}, \"chat\": {\"id\": -1001899507998, \"title\": \"Test Group for bots\", \"type\": \"supergroup\"}, \"date\": 1676275038, \"message_thread_id\": 2210, \"text\": \"1\"}, \"text\": \"reply на город\"}}'
 for command in commands:
 

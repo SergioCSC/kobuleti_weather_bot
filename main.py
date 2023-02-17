@@ -375,13 +375,14 @@ def _lambda_handler(event: dict, context) -> dict:
             tg_api_connector.send_message({chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
 
+        tz = '1'
         if command_type in (EventType.HOME_CITY, EventType.CITY, EventType.USER_LOCATION):  
             tg_api_connector.send_message({chat_id}, messages.HAVE_TO_THINK_TEXT, None)
             
             chats = base.get_chats()
             dark_mode = chats.get(chat_id, {}).get('dark_mode', cfg.DEFAULT_DARKMODE)  
             text, image, tz = get_text_image_tz(chosen_city, dark_mode)
-            if command_type in (EventType.HOME_CITY, EventType.USER_LOCATION):
+            if tz and command_type in (EventType.HOME_CITY, EventType.USER_LOCATION):
                 c = chosen_city
                 chosen_city = City(
                         c.local_name,

@@ -187,7 +187,7 @@ def _lambda_handler(event: dict, context) -> dict:
 
         time_str = event_data.info
 
-        time_of_day, weekday = aws_trigger.make_aws_trigger(
+        time_of_day, weekday = aws_trigger.make_aws_rule(
                 chat_id, time_str, chat_timezone, context)
     
         if not time_of_day:
@@ -224,7 +224,7 @@ def _lambda_handler(event: dict, context) -> dict:
         time_shift = aws_trigger.TimeOfDay(+timezone.hours, +timezone.minutes)
 
         times = []
-        triggers = aws_trigger.get_aws_triggers(chat_id, context)
+        triggers = aws_trigger.get_aws_rules(chat_id, context)
         for trigger in triggers:
             splitted_trigger = trigger.split('_')
             weekday_str = splitted_trigger[2]
@@ -263,7 +263,7 @@ def _lambda_handler(event: dict, context) -> dict:
         return cfg.LAMBDA_SUCCESS
 
     if event_data.type is EventType.CLEAR_CRON_TRIGGERS:
-        aws_trigger.clear_aws_triggers(chat_id, context)
+        aws_trigger.clear_aws_rules(chat_id, context)
         text = 'Фух, хорошо, больше никаких рутинных напоминалок!' \
                 f' Раз такое дело, вечерком разберу и почищу любимый морской хронометр ...'
         picture_url = 'https://www.meme-arsenal.com/memes/40027772b5abdd71c3ec57974b14f861.jpg'

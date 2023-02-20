@@ -122,14 +122,14 @@ def _create_cron_expression(time_of_day: TimeOfDay, weekday: Weekday) -> str:
     return f'cron({minutes} {hours} ? * {weekday.value if weekday else "*"} *)'
     
 
-def get_aws_triggers(chat_id: int, context) -> list[str]:
+def get_aws_rules(chat_id: int, context) -> list[str]:
     print_with_time(f'Start: get_aws_triggers\n\n')
     client = boto3.client(service_name='events', region_name='us-east-1')
     
     response = client.list_rule_names_by_target(
         TargetArn = context.invoked_function_arn
     )
-    
+
     rule_names = response.get('RuleNames')
     rule_names = [r for r in rule_names if r not in ('run_every_day', 'MyCronRule_9000')]
     rule_names = [r for r in rule_names if r.endswith(str(chat_id))]
@@ -137,23 +137,23 @@ def get_aws_triggers(chat_id: int, context) -> list[str]:
     return rule_names
 
 
-def clear_aws_triggers(chat_id: int, context) -> None:
+def clear_aws_rules(chat_id: int, context) -> None:
     print_with_time(f'Start: clear_aws_triggers\n\n')
     client_events = boto3.client(service_name='events', region_name='us-east-1')
     client_lambda = boto3.client(service_name='lambda', region_name='us-east-1')
     
-    rule_names = get_aws_triggers(chat_id, context)
+    rule_names = get_aws_rules(chat_id, context)
     for rule_name in rule_names:
-        if rule_name not in ('run_every_day', 'MyCronRule_9000'):
-            # response = client_lambda.get_policy(
-            #     FunctionName=context.function_name,
-            # )
-            # for statement in json.loads(response['Policy'])['Statement']:
-            #     statement_id = statement['Sid']
-            #     response = client_lambda.remove_permission(
-            #        FunctionName=context.function_name,
-            #         StatementId=statement_id,
-            #     )
+        # response = client_lambda.get_policy(
+        #     FunctionName=context.function_name,
+        # )
+        # for statement in json.loads(response['Policy'])['Statement']:
+        #     statement_id = statement['Sid']
+        #     response = client_lambda.remove_permission(
+        #        FunctionName=context.function_name,
+        #         StatementId=statement_id,
+        #     )
+        try:
             response = client_events.remove_targets(Rule=rule_name, 
                                             Ids=[context.function_name])
             response = client_events.delete_rule(Name=rule_name)
@@ -161,14 +161,16 @@ def clear_aws_triggers(chat_id: int, context) -> None:
                 FunctionName=context.function_name,
                 StatementId=rule_name,
             )
-            pass
+        except botocore.exceptions.ClientError as e:
+            print(f'{rule_name = }    ClientError: {e}')
+            raise e
 
 
 def _cut_timestamp(rule_name: str) -> str:
     return '_'.join(rule_name.split('_')[2:])
     
 
-def make_aws_trigger(chat_id: int, time_str: str, timezone: TimeOfDay, context) \
+def make_aws_rule(chat_id: int, time_str: str, timezone: TimeOfDay, context) \
         -> tuple[Optional[TimeOfDay], Optional[Weekday]]:
             
     print_with_time(f'Start: make_aws_trigger\n\n')
@@ -190,7 +192,7 @@ def make_aws_trigger(chat_id: int, time_str: str, timezone: TimeOfDay, context) 
     timestamp = int(time.time())
     rule_name = f'ts_{timestamp}_{w}{h:02}_{m:02}_chat_{chat_id}'
     
-    existing_rules = get_aws_triggers(chat_id, context)
+    existing_rules = get_aws_rules(chat_id, context)
     existing_rules = [_cut_timestamp(e) for e in existing_rules]
     cutted_rule_name = _cut_timestamp(rule_name)
     

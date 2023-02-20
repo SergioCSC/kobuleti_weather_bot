@@ -23,6 +23,9 @@ def parse_event(event) -> EventData:
     if event.get('detail-type') == 'Scheduled Event':  # event initiated by Event Bridge
         chat_id_str = event.get('resources')[0].split('/')[1].split('_')[-1]
         chat_id = int(chat_id_str) if chat_id_str.lstrip('-').isdigit() else None
+        if chat_id is None:
+            event_resources = event.get('resources')
+            utils.print_with_time(f'{chat_id = }, {event_resources = }')
         return EventData('', EventType.SCHEDULED, chat_id, '')
     elif event.get('httpMethod') in (
         'GET',
@@ -263,6 +266,9 @@ def _lambda_handler(event: dict, context) -> dict:
         return cfg.LAMBDA_SUCCESS
 
     if event_data.type is EventType.CLEAR_CRON_TRIGGERS:
+        # all_targets = aws_trigger.list_all_targets(chat_id, context)
+        # utils.print_with_time(f'{all_targets = }')
+        
         aws_trigger.clear_aws_rules(chat_id, context)
         text = 'Фух, хорошо, больше никаких рутинных напоминалок!' \
                 f' Раз такое дело, вечерком разберу и почищу любимый морской хронометр ...'

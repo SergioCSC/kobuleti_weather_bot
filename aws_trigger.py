@@ -1,3 +1,4 @@
+import json
 from utils import print_with_time
 from time_of_day import TimeOfDay, parse_time
 
@@ -142,28 +143,50 @@ def clear_aws_rules(chat_id: int, context) -> None:
     client_events = boto3.client(service_name='events', region_name='us-east-1')
     client_lambda = boto3.client(service_name='lambda', region_name='us-east-1')
     
+    # remove permissions
+    response = client_lambda.get_policy(
+        FunctionName=context.function_name,
+    )
+    for statement in json.loads(response.get('Policy', '{}')).get('Statement', {}):
+        statement_id = statement.get('Sid', '')
+        print_with_time(f'{statement_id = }')
+        if statement_id.endswith(str(chat_id)):
+            response = client_lambda.remove_permission(
+                FunctionName=context.function_name,
+                StatementId=statement_id,
+            )
+    
+    #remove rules
     rule_names = get_aws_rules(chat_id, context)
     for rule_name in rule_names:
-        # response = client_lambda.get_policy(
-        #     FunctionName=context.function_name,
-        # )
-        # for statement in json.loads(response['Policy'])['Statement']:
-        #     statement_id = statement['Sid']
-        #     response = client_lambda.remove_permission(
-        #        FunctionName=context.function_name,
-        #         StatementId=statement_id,
-        #     )
         try:
             response = client_events.remove_targets(Rule=rule_name, 
                                             Ids=[context.function_name])
+            if isinstance(response, dict) \
+                    and response.get('FailedEntryCount', 0):
+                failed_entries = response.get('FailedEntries', [])
+                print_with_time(f'{failed_entries = }')
             response = client_events.delete_rule(Name=rule_name)
             response = client_lambda.remove_permission(
                 FunctionName=context.function_name,
                 StatementId=rule_name,
             )
+            # time.sleep(1)
         except botocore.exceptions.ClientError as e:
             print(f'{rule_name = }    ClientError: {e}')
             raise e
+
+
+def _list_all_targets(chat_id: int, context):
+    rule_names = get_aws_rules(chat_id, context)
+    client_events = boto3.client(service_name='events', region_name='us-east-1')
+    
+    rules_targets = []
+    for rule in rule_names:
+        rule_targets = client_events.list_targets_by_rule(Rule=rule).get('Targets', [])
+        rules_targets.extend(rule_targets)
+    target_ids = [target['Id'] for target in rules_targets if 'Id' in target]
+    return target_ids
 
 
 def _cut_timestamp(rule_name: str) -> str:

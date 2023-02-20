@@ -38,6 +38,9 @@ def send_message(message_to: str,
             for c in '[]()~`>#+-=|{}.!':  # '_*[]()~`>#+-=|{}.!':  # '!=()#-.':
                 message = message.replace(c, '\\' + c)
             if str(chat_id).startswith('-100'):
+                if len(message_to.split('&')) != 2:
+                    utils.print_with_time(f'{message_to = }, \
+                                          {chat_id = },   {message = }')
                 username, user_id = message_to.split('&')
                 # message = f'{message_to},\n\n{message}'
                 message = f'[{username}](tg://user?id={user_id}),\n\n{message}'

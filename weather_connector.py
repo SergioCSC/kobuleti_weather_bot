@@ -139,7 +139,7 @@ def _create_weather_text(city: City, w: Weather,
     zenith = TimeOfDay(zenith_total_minutes // 60, zenith_total_minutes % 60)
     
     weather_text = (
-        f'🌡 {w.temp_celsius:.0f} °C{",  🌊 вода " + str(water_temp) + " °C" if water_temp else ""}'
+        f'🌡 {w.temp_celsius:.0f} °C{" ,  🌊 вода " + str(water_temp) + " °C" if water_temp else ""}'
         f'\n{weather_icon}{w.long_description}'
         f'\n💨 ветер {w.wind_speed_ms:.0f} м/с'
         f'\n🚰 влажность {w.humidity_percent}%'

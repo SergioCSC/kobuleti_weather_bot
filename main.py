@@ -317,12 +317,13 @@ def _lambda_handler(event: dict, context) -> dict:
                     text = 'Ой, простите ... у нас тут записано, что вы нигде не живёте. ' \
                             f' Галя! Гааа-ляяя! Простите ... Извините ... Сейчас ...' \
                             f' Напишите пока, пожалуйста, ваш город, вот так:' \
-                            f'\n\n🧑‍💻 _*/home Екатеринбург*_\n\n' \
-                            f'А Галя сейчас допьёт кофе и запишет вас'
+                            f'\n\n🧑‍💻 _*/home Екатеринбург*_\n\n, или так:\n\n' \
+                            f'\n\n🧑‍💻 _*/дом Екатеринбург*_' \
+                            f'\n\nА Галя сейчас допьёт кофе и запишет вас'
                 tg_api_connector.send_message(fr, {chat_id}, text, None)
                 return cfg.LAMBDA_SUCCESS
             command = event_data.type.name.lower().split('_')[0]
-            text = messages.EMPTY_ADD_TEXT % (command, command)
+            text = messages.EMPTY_ADD_TEXT % command
             tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
         

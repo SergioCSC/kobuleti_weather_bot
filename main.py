@@ -406,6 +406,9 @@ def _lambda_handler(event: dict, context) -> dict:
                         tz,
                         c.url_suffix_for_sig)
                 base.save_chat_city(chat_id, chosen_city)
+                save_text = f'{c.local_name} установлен в качестве домашнего.' \
+                        f' Это влияет только на часовой пояс для метеосводок'
+                tg_api_connector.send_message(fr, {chat_id}, save_text, None)
             tg_api_connector.send_message(fr, {chat_id}, text, image)
 
         elif command_type is EventType.ADD_CITY:        
@@ -429,11 +432,6 @@ def _lambda_handler(event: dict, context) -> dict:
         if not tz and command_type is EventType.HOME_CITY:
             no_tz_text = 'не смог определить часовой пояс ... попробуем другой город?'
             tg_api_connector.send_message(fr, {chat_id}, no_tz_text, None)
-            
-        if tz and command_type in (EventType.HOME_CITY, EventType.USER_LOCATION):
-            text = f'{c.local_name} установлен в качестве домашнего.' \
-            f' Это влияет только на часовой пояс для метеосводок'
-            tg_api_connector.send_message(fr, {chat_id}, text, None)
 
         return cfg.LAMBDA_SUCCESS
 

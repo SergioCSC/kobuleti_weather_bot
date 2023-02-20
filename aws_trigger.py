@@ -151,10 +151,18 @@ def clear_aws_rules(chat_id: int, context) -> None:
         statement_id = statement.get('Sid', '')
         print_with_time(f'{statement_id = }')
         if statement_id.endswith(str(chat_id)):
-            response = client_lambda.remove_permission(
-                FunctionName=context.function_name,
-                StatementId=statement_id,
-            )
+            try:
+                response = client_lambda.remove_permission(
+                    FunctionName=context.function_name,
+                    StatementId=statement_id,
+                )
+            except botocore.exceptions.ClientError as e:
+                if err := e.response['Error']['Code'] \
+                        in ('ResourceConflictException', 
+                            'ResourceNotFoundException'):
+                    print(f'{err = }, {e = }')
+                else:
+                    raise e
     
     #remove rules
     rule_names = get_aws_rules(chat_id, context)
@@ -173,8 +181,11 @@ def clear_aws_rules(chat_id: int, context) -> None:
             )
             # time.sleep(1)
         except botocore.exceptions.ClientError as e:
-            print(f'{rule_name = }    ClientError: {e}')
-            raise e
+            err = e.response['Error']['Code']
+            print(f'{rule_name = }   {err = }   {e = }')
+            if not err in ('ResourceConflictException', 
+                           'ResourceNotFoundException'):
+                raise e
 
 
 def _list_all_targets(chat_id: int, context):

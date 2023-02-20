@@ -74,7 +74,7 @@ def parse_event(event) -> EventData:
             if bot_mention_position != -1:
                 text = text[:bot_mention_position].strip()
 
-            if text.lower() == '/start':
+            if text.lower() in ('/start', '/жги'):
                 return EventData(message_from, EventType.START, chat_id, '')
 
             if text.lower() in ('/here', '/тут'):
@@ -94,9 +94,9 @@ def parse_event(event) -> EventData:
 
             if text.lower().startswith('/time') or text.lower().startswith('/шли'):
                 if text.lower().startswith('/time'):
-                    time_str = text[len('/time'):].strip()
+                    time_str = text[len('/time'):].strip().lower()
                 else:
-                    time_str = text[len('/шли'):].strip()
+                    time_str = text[len('/шли'):].strip().lower()
 
                 if not time_str:
                     return EventData(message_from, EventType.LIST_CRON_TRIGGERS, chat_id, '')
@@ -198,7 +198,8 @@ def _lambda_handler(event: dict, context) -> dict:
                     f' Вам на 17-й этаж, кабинет справа по коридору.' \
                     f' Куда же вы пошли? Лифт только для персонала, вам туда ... Подождите, куда же вы опять?' \
                     f' Купите бахилы и маску, пожалуйста ... Кстати, дайте-ка сюда вашу анкету.' \
-                    f' Ну конечно! У вас ошибка. Вместо\n\n_\"{"/time " + time_str}\"_\n\nнадо написать что-то другое. Смотрите:' \
+                    f' Ну конечно! У вас ошибка. Вместо\n\n_*\"{"/time " + time_str}\"*_' \
+                    f'\n\nнадо написать что-то другое. Смотрите:' \
                     f'\n\n{messages.ABOUT_TIME_COMMAND_TEXT}' \
                     f'\n\nУ нас с бумагами строго. Ладно, идите. Эй, постойте! Куда вы!' \
                     f'\nНе слышит. Ладно, сбегает в регистратуру, оно полезно'
@@ -315,8 +316,8 @@ def _lambda_handler(event: dict, context) -> dict:
                 else:
                     text = 'Ой, простите ... у нас тут записано, что вы нигде не живёте. ' \
                             f' Галя! Гааа-ляяя! Простите ... Извините ... Сейчас ...' \
-                            f' Напишите пока, пожалуйста, ваш город, вот так:\n\n' \
-                            f'_/home Екатеринбург_\n\n' \
+                            f' Напишите пока, пожалуйста, ваш город, вот так:' \
+                            f'\n\n🧑‍💻 _*/home Екатеринбург*_\n\n' \
                             f'А Галя сейчас допьёт кофе и запишет вас'
                 tg_api_connector.send_message(fr, {chat_id}, text, None)
                 return cfg.LAMBDA_SUCCESS
@@ -325,7 +326,7 @@ def _lambda_handler(event: dict, context) -> dict:
             tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
         
-        elif event_data.info == 'clear' \
+        elif event_data.info.lower() in ('clear', 'очисти') \
                 and event_data.type is EventType.HOME_CITY:
             base.clear_chat_city(chat_id)
             text = 'Гааа-ляяяя! Забудь пожалуйста, где живёт этот гражданин!\n\n' \
@@ -333,7 +334,7 @@ def _lambda_handler(event: dict, context) -> dict:
             tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
         
-        elif event_data.info == 'city':
+        elif event_data.info.lower() == 'city':
             text = messages.CITY_CITY_TEXT
             tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
@@ -524,7 +525,7 @@ def get_chat_timezone(message_to: str, chat_id: int) -> Optional[aws_trigger.Tim
         if str(chat_id).startswith('-100'):  # if group chat
             text = f'Вы хотите установить время, но вы не говорите мне свой' \
                     f' часовой пояс. Пожалуйста, установите ваш домашний город командой' \
-                    f' _/home_ (она же команда _/дом_)'
+                    f'\n\n🧑‍💻  _*/home*_\n\n, она же команда\n\n🧑‍💻 _*/дом*_'
 
             picture_url = 'https://www.meme-arsenal.com/memes/710dd6fb3af6cfec6b218229a9f22170.jpg'
             response = requests.get(picture_url)
@@ -535,8 +536,8 @@ def get_chat_timezone(message_to: str, chat_id: int) -> Optional[aws_trigger.Tim
             text = f'Вы хотите установить время, но вы не говорите мне свой' \
                     f' часовой пояс. Пожалуйста, посмотрите погоду в вашей локации,' \
                     f' а я посмотрю ваш часовой пояс. А потом попробуйте установить' \
-                    f' время ещё раз. Либо установите ваш домашний город командой _/home_' \
-                    f' (она же команда _/дом_)'
+                    f' время ещё раз. Либо установите ваш домашний город командой' \
+                    f'\n\n🧑‍💻  _*/home*_\n\n, она же команда\n\n🧑‍💻 _*/дом*_'
 
             picture_url = 'https://www.meme-arsenal.com/memes/710dd6fb3af6cfec6b218229a9f22170.jpg'
             response = requests.get(picture_url)

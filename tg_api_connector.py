@@ -37,7 +37,7 @@ def send_message(message_to: str,
         if message:
             for c in '[]()~`>#+-=|{}.!':  # '_*[]()~`>#+-=|{}.!':  # '!=()#-.':
                 message = message.replace(c, '\\' + c)
-            if str(chat_id).startswith('-100'):
+            if message_to and str(chat_id).startswith('-100'):
                 if len(message_to.split('&')) != 2:
                     utils.print_with_time(f'{message_to = }, \
                                           {chat_id = },   {message = }')

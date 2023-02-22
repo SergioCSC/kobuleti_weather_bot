@@ -157,7 +157,6 @@ def _lambda_handler(event: dict, context) -> dict:
     fr = event_data.from_
 
     if event_data.type is EventType.SCHEDULED:
-        tg_api_connector.send_message(fr, {chat_id}, messages.HAVE_TO_THINK_TEXT, None)
         
         chats = base.get_chats()
         

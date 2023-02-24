@@ -4,6 +4,7 @@ from typing import NamedTuple, Optional
 class EventType(Enum):
     START = auto()
     HERE = auto()
+    KOBULETI = auto()
     ADD_CRON_TRIGGER = auto()
     LIST_CRON_TRIGGERS = auto()
     CLEAR_CRON_TRIGGERS = auto()

@@ -125,14 +125,15 @@ def parse_event(event) -> EventData:
                 number = int(text[1:].strip())
                 return EventData(message_from, EventType.CHOOSE_CITY, chat_id, str(number - 1))
 
-            if text.startswith('/') and len(text) > 2:  # city command
+            if text.lower() in ('/k', '/к'):  # Kobuleti
+                return EventData(message_from, EventType.KOBULETI, chat_id, '')
+            
+            if text.startswith('/') and len(text) > 1:  # city command
                 city_name = text[1:].strip()
                 city_name = city_name.replace(' ', '_')  # TODO copypaste
-                if len(city_name) > 1:
+                if len(city_name) > 0:
                     return EventData(message_from, EventType.CITY, chat_id, city_name)
             
-            # if text.lower() == '/k':
-            #     return EventData(message_from, EventType.CITY, chat_id, default_city_name)
     utils.print_with_time(f'can\'t parse message')
     return EventData('', EventType.OTHER, None, '')
 
@@ -270,6 +271,17 @@ def _lambda_handler(event: dict, context) -> dict:
         picture_url = 'https://www.meme-arsenal.com/memes/40027772b5abdd71c3ec57974b14f861.jpg'
         response = requests.get(picture_url)
         image = io.BytesIO(response.content)
+        tg_api_connector.send_message(fr, {chat_id}, text, image)
+        return cfg.LAMBDA_SUCCESS
+    
+    if event_data.type is EventType.KOBULETI:
+        tg_api_connector.send_message(fr, {chat_id}, messages.HAVE_TO_THINK_TEXT, None)
+        city_options = list(weather_connector.get_city_options(city_name='Кобулети'))
+        assert city_options
+        chosen_city = city_options[0]
+        chats = base.get_chats()
+        dark_mode = chats.get(chat_id, {}).get('dark_mode', cfg.DEFAULT_DARKMODE)  
+        text, image, tz = get_text_image_tz(chosen_city, dark_mode)
         tg_api_connector.send_message(fr, {chat_id}, text, image)
         return cfg.LAMBDA_SUCCESS
 

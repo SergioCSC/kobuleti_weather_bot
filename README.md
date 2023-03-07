@@ -18,13 +18,13 @@ So you have to create account on https://openweathermap.org, and also create bot
 
 My bot hosts on **Amazon Lambda**. If you want host it there too:
 
-* Create labmda function
-* Use *python 3.9* runtime
+* Create AWS Lambda function
+* Use *python 3.9* runtime for it
 * Create API gateway trigger in your Lambda and use it as a webhook for telegram bot using such HTTP request:
 
       https://api.telegram.org/bot*your-bot-token-here*/setWebhook?url=*lambda-trigger-url-here*
 
-* Add *pandas* layer (version 3). 
+* Add *pandas* layer (version 3) to your Lambda function 
 * The sole python library which doesn't exists in this layer is *pillow* and it must be contained in *libs_for_aws_lambda* folder, so install *pillow* to this folder: 
     ```console
     pip install Pillow --target libs_for_aws_lambda --upgrade --python 3.9 --only-binary=:all:

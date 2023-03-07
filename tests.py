@@ -9,11 +9,15 @@ test_event_bridge = {
         "detail": {},
     }
 
-# chat_id = 534111842
-chat_id = -1001899507998  # test group for bots
+chat_id = 534111842
+# chat_id = -1001899507998  # test group for bots
 commands = [
-    'степанцминда',
-    '/list',
+    '/k',
+    # '/спб',
+    # '/шли ниогда',
+    # 'степанцминда',
+    # '/list',
+    # '/foz do arelho',
     # '/add foz do arelho',
     # '/list',
     # '/time',
@@ -57,7 +61,6 @@ commands = [
     # '/start',
     # '/сосновка',
     # '/5',
-    # '/спб',
     # '/add Кобулети',
     # '/1',
     # '/мухосранск',

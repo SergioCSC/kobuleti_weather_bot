@@ -8,10 +8,10 @@ from event import EventType, EventData
 import messages
 import aws_trigger
 from time_of_day import parse_time
+import tests
 
 import io
 import json
-import tests
 import random
 import requests
 import traceback

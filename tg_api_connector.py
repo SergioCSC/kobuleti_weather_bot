@@ -35,16 +35,19 @@ def send_message(message_to: str,
 
     for chat_id in chat_set:
         if message:
+            for c in cfg.SPECIAL_SYMBOLS:  # '_*[]()~`>#+-=|{}.!':  # '!=()#-.':
+                message = message.replace(c, '\\' + c)
+
             if message_to and str(chat_id).startswith('-100'):
                 if len(message_to.split('&')) != 2:
                     utils.print_with_time(f'{message_to = }, \
                                           {chat_id = },   {message = }')
                 username, user_id = message_to.split('&')
+                for c in cfg.SPECIAL_SYMBOLS:
+                    username = username.replace(c, '\\' + c)
                 # message = f'{message_to},\n\n{message}'
                 message = f'[{username}](tg://user?id={user_id}),\n\n{message}'
 
-            for c in '[]()~`>#+-=|{}.!':  # '_*[]()~`>#+-=|{}.!':  # '!=()#-.':
-                message = message.replace(c, '\\' + c)
             message = urllib.parse.quote(message.encode('utf-8'))
 
         if location_str:

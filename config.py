@@ -49,3 +49,5 @@ CHAT_CITY_EXPIRATION_TIME_SEC = 60 * 60 * 24 * 30  # 60 * 60 * 24 * 365
 LAMBDA_SUCCESS = {'statusCode': 200, 'body': 'Success'}
 
 MAX_SAVED_CITIES_PER_USER = 5
+
+SPECIAL_SYMBOLS = '[]()~`>#+-=|{}.!'

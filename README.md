@@ -16,7 +16,7 @@ So you have to create account on https://openweathermap.org, and also create bot
 
 ### Run on AWS Lambda
 
-My bot hosts on **Amazon Lambda**. If you want host it there too:
+My bot is hosted on **Amazon Lambda**. If you want host it there too:
 
 * Create AWS Lambda function
 * Use *python 3.9* runtime for it

@@ -38,6 +38,8 @@ If you want to run this code locally, you need to install python libraries *boto
 pip install -r requirements.txt
 ```
 
+Please note that you must have Amazon AWS account and login into it from your browser because this bot uses Amazon AWS DynamoDb as a database for your preferences.
+
 Then run
 
 ```console

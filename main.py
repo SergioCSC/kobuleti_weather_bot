@@ -346,8 +346,8 @@ def _lambda_handler(event: dict, context) -> dict:
             tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
         
-        elif event_data.info.lower() == 'city':
-            text = messages.CITY_CITY_TEXT
+        elif event_data.info.lower() in ('city', 'город'):
+            text = messages.CITY_CITY_TEXT % (event_data.info.lower(), event_data.info.lower())
             tg_api_connector.send_message(fr, {chat_id}, text, None)
             return cfg.LAMBDA_SUCCESS
 

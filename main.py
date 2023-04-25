@@ -17,6 +17,7 @@ import requests
 import traceback
 from typing import Any, Optional
 from functools import cache
+import logging
 
 
 def parse_event(event) -> EventData:
@@ -25,7 +26,8 @@ def parse_event(event) -> EventData:
         chat_id = int(chat_id_str) if chat_id_str.lstrip('-').isdigit() else None
         if chat_id is None:
             event_resources = event.get('resources')
-            utils.print_with_time(f'{chat_id = }, {event_resources = }')
+            utils.print_with_time(f'{chat_id = }, {event_resources = }',
+                                  log_level=logging.INFO)
         return EventData('', EventType.SCHEDULED, chat_id, '')
     elif event.get('httpMethod') in (
         'GET',
@@ -56,14 +58,15 @@ def parse_event(event) -> EventData:
             if not text:
                 location = update[key].get('location')
                 if not location:
-                    utils.print_with_time(f'message without text and location: {update[key]}')
+                    utils.print_with_time(f'message without text and location: {update[key]}',
+                                          log_level=logging.INFO)
                     return EventData(message_from, EventType.OTHER, None, '')
-                else:
-                    latitude = location['latitude']
-                    longitude = location['longitude']
-                    location_str = f'{latitude},{longitude}'
-                    return EventData(message_from, EventType.USER_LOCATION, chat_id,
-                                     location_str)
+                
+                latitude = location['latitude']
+                longitude = location['longitude']
+                location_str = f'{latitude},{longitude}'
+                return EventData(message_from, EventType.USER_LOCATION, chat_id,
+                                    location_str)
             text = bytes(text, 'utf-8').decode('utf-8').strip()
             
             is_private = update[key]['chat'].get('type') == 'private'
@@ -134,7 +137,7 @@ def parse_event(event) -> EventData:
                 if len(city_name) > 0:
                     return EventData(message_from, EventType.CITY, chat_id, city_name)
             
-    utils.print_with_time(f'can\'t parse message')
+    utils.print_with_time(f'can\'t parse message', log_level=logging.INFO)
     return EventData('', EventType.OTHER, None, '')
 
 
@@ -143,8 +146,9 @@ def lambda_handler(event: dict, context) -> dict:
         utils.print_with_time(f'lambda_handler() start')
         return _lambda_handler(event, context)
     except Exception as e:
-        utils.print_with_time(f'Exception: {e = }\n\n')
-        utils.print_with_time(f'Traceback: {traceback.print_exc() = }\n\n')
+        utils.print_with_time(f'Exception: {e = }\n\n', log_level=logging.ERROR)
+        utils.print_with_time(f'Traceback: {traceback.print_exc() = }\n\n',
+                              log_level=logging.ERROR)
         return cfg.LAMBDA_SUCCESS
 
 

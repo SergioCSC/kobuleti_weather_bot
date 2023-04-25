@@ -8,6 +8,7 @@ import botocore
 from botocore.exceptions import ClientError
 
 import time
+import logging
 from typing import Any
 from decimal import Decimal
 
@@ -236,7 +237,8 @@ def _check_if_table_exists(table: 'boto3.resources.factory.dynamodb.Table') -> b
             utils.print_with_time(
                 "Couldn't check for existence of %s. Here's why: %s: %s",
                 TABLE_NAME,
-                err.response['Error']['Code'], err.response['Error']['Message'])
+                err.response['Error']['Code'], err.response['Error']['Message'],
+                log_level=logging.ERROR)
             raise
     return exists
 
@@ -268,7 +270,9 @@ def _create_table(dynamodb_client: 'botocore.client.DynamoDB',
         table.wait_until_exists()
         utils.print_with_time('Table created successfully!')
     except dynamodb_client.exceptions.ResourceInUseException:
-        utils.print_with_time(f'ResourceInUseException. Probably, db {table_name} already exists.')
+        utils.print_with_time(f'ResourceInUseException. Probably, \
+                              db {table_name} already exists.', 
+                              log_level=logging.INFO)
         table = dynamodb_resource.Table(table_name)
     return table
 

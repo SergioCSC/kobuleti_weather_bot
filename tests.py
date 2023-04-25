@@ -191,8 +191,8 @@ class LambdaContext(NamedTuple):
     invoked_function_arn: str
     client_context: Any
     identity: Any
-    
-    
+
+
 context = LambdaContext(
         aws_request_id='654f275b-f673-46ab-a0f3-2c12f70b7b09',
         log_group_name='/aws/lambda/kobuleti_weather',

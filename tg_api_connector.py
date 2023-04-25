@@ -7,6 +7,7 @@ import requests
 import io
 import json
 import urllib
+import logging
 from urllib.error import HTTPError
 from typing import Optional
 
@@ -95,9 +96,11 @@ def send_message(message_to: str,
                                    files={'photo': image} if image else {})
             utils.print_with_time(f'{telegram_request_url = }')
             if result.status_code != 200:
-                utils.print_with_time(f'{telegram_request_url = }\n{result.text = }')
+                utils.print_with_time(f'{telegram_request_url = }\n{result.text = }',
+                                      log_level=logging.ERROR)
         except HTTPError as e:
-            utils.print_with_time(f'HTTPError for url: {telegram_request_url}\n\nException: {e}')
+            utils.print_with_time(f'HTTPError for url: {telegram_request_url} \
+                                  \n\nException: {e}', log_level=logging.ERROR)
     
     if image:
         image.seek(0)

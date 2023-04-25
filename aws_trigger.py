@@ -1,10 +1,11 @@
-import json
 from utils import print_with_time
 from time_of_day import TimeOfDay, parse_time
 
 import boto3
 import botocore
 
+import json
+import logging
 from typing import Optional
 from typing import NamedTuple
 from enum import Enum, auto
@@ -160,7 +161,7 @@ def clear_aws_rules(chat_id: int, context) -> None:
                 if err := e.response['Error']['Code'] \
                         in ('ResourceConflictException', 
                             'ResourceNotFoundException'):
-                    print(f'{err = }, {e = }')
+                    print_with_time(f'{err = }, {e = }', logging.INFO)
                 else:
                     raise e
     
@@ -173,7 +174,7 @@ def clear_aws_rules(chat_id: int, context) -> None:
             if isinstance(response, dict) \
                     and response.get('FailedEntryCount', 0):
                 failed_entries = response.get('FailedEntries', [])
-                print_with_time(f'{failed_entries = }')
+                print_with_time(f'{failed_entries = }', logging.INFO)
             response = client_events.delete_rule(Name=rule_name)
             response = client_lambda.remove_permission(
                 FunctionName=context.function_name,
@@ -182,7 +183,7 @@ def clear_aws_rules(chat_id: int, context) -> None:
             # time.sleep(1)
         except botocore.exceptions.ClientError as e:
             err = e.response['Error']['Code']
-            print(f'{rule_name = }   {err = }   {e = }')
+            print_with_time(f'{rule_name = }   {err = }   {e = }', logging.INFO)
             if not err in ('ResourceConflictException', 
                            'ResourceNotFoundException'):
                 raise e
@@ -268,11 +269,12 @@ def make_aws_rule(chat_id: int, time_str: str, timezone: TimeOfDay, context) \
             SourceArn=rule_arn
         )
     except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'ResourceConflictException':
-            print(f'ResourceConflictException: {error}')
+        exception_name = error.response['Error']['Code']
+        if exception_name == 'ResourceConflictException':
+            print_with_time(f'{exception_name}: {error}', logging.ERROR)
         else:
             raise error
 
     print_with_time(f'client.add_permission response: {response}\n\n')
-    
+
     return time_of_day, weekday

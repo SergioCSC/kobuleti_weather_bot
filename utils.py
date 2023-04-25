@@ -1,6 +1,10 @@
 from urllib.request import Request, urlopen
 import http
 import time
+import logging
+
+
+logging.getLogger().setLevel(logging.INFO)  # for aws lambda
 
 
 last_time = None
@@ -18,7 +22,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-def print_with_time(s: str) -> None:
+def print_with_time(s: str, log_level: int = logging.DEBUG) -> None:
     global last_time
     if not last_time:
         last_time = time.time()
@@ -32,8 +36,9 @@ def print_with_time(s: str) -> None:
         color = bcolors.OKGREEN
     else:
         color = bcolors.ENDC
-        
-    print(f'{color}{delta:.1f}s {s}{bcolors.ENDC}')
+    
+    log_message = f'{color}{delta:.1f}s {s}{bcolors.ENDC}'
+    logging.log(log_level, log_message)
     
 
 def get(url: str) -> http.client.HTTPResponse:
